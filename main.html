@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SPEEDO App</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet & Routing -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        :root {
+            --primary: #E31C25; /* Speedo Red */
+            --dark-red: #b9151c;
+            --text: #333;
+            --bg-gray: #f2f4f6;
+            --white: #ffffff;
+            --shadow-soft: 0 10px 30px rgba(0,0,0,0.08);
+            --shadow-card: 0 4px 15px rgba(0,0,0,0.05);
+            --nav-height: 70px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; outline: none; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg-gray); height: 100vh; width: 100vw; overflow: hidden; display: flex; flex-direction: column; }
+
+        /* --- UTILS --- */
+        .hidden { display: none !important; }
+        .full-screen { position: fixed; inset: 0; background: white; z-index: 2000; display: flex; flex-direction: column; overflow: hidden; }
+        .btn { width: 100%; padding: 14px; border-radius: 12px; font-weight: 600; text-align: center; border: none; cursor: pointer; transition: 0.2s; font-size: 15px; }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(227, 28, 37, 0.3); }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+
+        /* --- TOP LOADER --- */
+        #top-loader { position: fixed; top: 0; left: 0; width: 100%; height: 4px; background: rgba(255,255,255,0.3); z-index: 9999; display: none; }
+        #top-loader .bar { height: 100%; background: #fff; width: 0%; animation: loadingBar 1.5s infinite linear; }
+        @keyframes loadingBar { 0% { width: 0%; margin-left: 0; } 50% { width: 50%; margin-left: 25%; } 100% { width: 0%; margin-left: 100%; } }
+
+        /* --- MAIN UI STRUCTURE --- */
+        .app-header-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 25vh;
+            background: var(--primary); z-index: 1;
+            padding: 20px; color: white;
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding-top: 40px;
+        }
+        
+        .user-info { display: flex; align-items: center; gap: 12px; }
+        .profile-img-main { width: 50px; height: 50px; border-radius: 50%; border: 2px solid white; object-fit: cover; background: #ddd; }
+        .welcome-text span { font-size: 12px; opacity: 0.9; }
+        .welcome-text h2 { font-size: 20px; font-weight: 700; line-height: 1.1; }
+
+        .lang-btn {
+            background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px;
+            font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px;
+        }
+
+        .main-sheet {
+            position: fixed; top: 140px; left: 0; width: 100%; bottom: var(--nav-height);
+            background: var(--bg-gray);
+            border-radius: 30px 30px 0 0;
+            z-index: 10;
+            overflow-y: auto;
+            padding: 25px 20px 80px 20px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+        }
+
+        .search-widget {
+            background: #e6e6e6; padding: 15px 20px; border-radius: 30px;
+            display: flex; align-items: center; gap: 15px; margin-bottom: 25px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); cursor: pointer;
+        }
+        .search-widget i { font-size: 18px; color: #555; }
+        .search-widget span { font-weight: 600; color: #333; font-size: 14px; }
+
+        .services-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .service-btn {
+            background: #e0e0e0; aspect-ratio: 1; border-radius: 20px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s;
+        }
+        .service-btn:active { transform: scale(0.95); }
+        .service-btn i { font-size: 24px; color: #333; }
+        .service-btn span { font-weight: 600; font-size: 13px; color: #333; }
+
+        .ad-banner {
+            width: 100%; height: 140px; background: linear-gradient(135deg, #ff9966, #ff5e62);
+            border-radius: 20px; margin-bottom: 25px; display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 18px; text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            box-shadow: var(--shadow-card); position: relative; overflow: hidden;
+        }
+        .ad-banner::after { content: 'PROMO 50% OFF'; position: absolute; bottom: 10px; right: 15px; font-size: 12px; background: white; color: var(--primary); padding: 4px 10px; border-radius: 10px; }
+
+        .sos-container {
+            background: #e0e0e0; border-radius: 40px; padding: 10px;
+            display: flex; align-items: center; gap: 15px;
+            box-shadow: var(--shadow-card); cursor: pointer;
+        }
+        .sos-circle {
+            width: 50px; height: 50px; background: #d00000; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; color: white; font-size: 20px;
+            box-shadow: 0 4px 10px rgba(208, 0, 0, 0.4);
+        }
+        .sos-text { font-weight: 700; font-size: 16px; color: #333; }
+        .sheet-spacer { height: 100px; background: #e0e0e0; border-radius: 20px; margin-top: 25px; opacity: 0.5; }
+
+        /* --- BOTTOM NAVIGATION --- */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: var(--nav-height);
+            background: white; z-index: 100;
+            display: flex; justify-content: space-around; align-items: center;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.05); border-top: 1px solid #eee;
+        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #999; font-size: 10px; font-weight: 600; cursor: pointer; width: 60px; }
+        .nav-item i { font-size: 20px; transition: 0.2s; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item.active i { transform: translateY(-2px); }
+
+        /* --- POPUPS & MODALS --- */
+        .popup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+        .popup-card { background: white; padding: 25px; border-radius: 25px; width: 85%; max-width: 320px; text-align: center; animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .sos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .sos-option { padding: 20px 10px; border-radius: 15px; border: 2px solid #eee; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .sos-option.sec { background: #fff5f5; border-color: #ffcccc; color: #d00000; }
+        .sos-option.hlt { background: #f0fff4; border-color: #c6f6d5; color: #2f855a; }
+
+        /* --- RIDE UI OVERLAYS --- */
+        #ride-form-screen { z-index: 2100; transform: translateY(100%); transition: transform 0.3s; background: white; }
+        #ride-form-screen.active { transform: translateY(0); }
+        .input-block-col { margin: 20px; padding: 15px; border: 1px solid #eee; border-radius: 16px; display: flex; gap: 10px; box-shadow: var(--shadow-card); }
+        .input-visuals { display: flex; flex-direction: column; align-items: center; padding-top: 5px; gap: 4px; }
+        .v-dot { width: 8px; height: 8px; background: black; border-radius: 50%; }
+        .v-line { width: 2px; flex: 1; background: #eee; min-height: 20px; }
+        .v-square { width: 8px; height: 8px; background: var(--primary); }
+        .input-fields { flex: 1; display: flex; flex-direction: column; gap: 15px; }
+        .loc-input { font-size: 14px; padding: 10px; background: #f9f9f9; border-radius: 8px; color: #333; }
+        .loc-input.ph { color: #888; }
+
+        #search-overlay { z-index: 2200; display: none; }
+        #search-overlay.active { display: flex; }
+        .search-header { padding: 15px; border-bottom: 1px solid #eee; display: flex; gap: 10px; align-items: center; }
+        .search-box { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; }
+        .res-list { flex: 1; overflow-y: auto; padding: 10px 20px; }
+        .res-item { padding: 15px 0; border-bottom: 1px solid #f0f0f0; display: flex; gap: 15px; align-items: center; cursor: pointer; }
+
+        #map-route-screen { z-index: 2150; display: none; position: fixed; inset: 0; }
+        #driver-select-screen { z-index: 2160; transform: translateX(100%); transition: transform 0.3s; background: #f8f9fa; }
+        #driver-select-screen.active { transform: translateX(0); }
+
+        /* DRIVER CARD */
+        .driver-card-fancy {
+            background: white; margin: 12px 15px; padding: 12px; border-radius: 16px;
+            box-shadow: var(--shadow-card); border: 1px solid #eee; display: flex; flex-direction: column; gap: 10px;
+        }
+        .dc-top { display: flex; align-items: center; gap: 12px; }
+        .dc-profile { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
+        .dc-car-icon { width: 22px; height: 22px; border-radius: 50%; background: #333; color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; margin-left: -15px; margin-bottom: -25px; z-index: 2; border: 2px solid white; }
+        .dc-info { flex: 1; }
+        .dc-name { font-weight: 700; font-size: 15px; }
+        .dc-price { color: #00b894; font-weight: 700; font-size: 16px; float: right; }
+        
+        /* MAP MARKERS & ANIMATION */
+        .veh-rect-marker { background: var(--primary); border: 2px solid white; width: 24px !important; height: 14px !important; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); margin-left: -12px !important; margin-top: -7px !important; }
+        .custom-pin { background: #333; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .pin-drop { background: var(--primary); }
+
+        /* ANIMATED DOT LINE CSS */
+        .route-path-anim {
+            stroke-dasharray: 15, 15;
+            animation: dash 1s linear infinite;
+        }
+        @keyframes dash {
+            to { stroke-dashoffset: -30; }
+        }
+        
+        /* VEHICLE LIST (BOTTOM CARD) */
+        .route-card { 
+            position: absolute; bottom: 0; left: 0; width: 100%; 
+            background: white; border-radius: 25px 25px 0 0; 
+            padding: 20px; 
+            transform: translateY(100%); transition: 0.4s; 
+            box-shadow: 0 -5px 25px rgba(0,0,0,0.1); 
+            z-index: 9999; /* FIX: Increased Z-Index to sit on top of map */
+        }
+        .route-card.show { transform: translateY(0); }
+        .veh-list { display: flex; gap: 15px; overflow-x: auto; padding: 10px 0; scrollbar-width: none; }
+        .veh-item { min-width: 80px; padding: 10px; border: 1px solid #eee; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .veh-item.selected { background: #fff0f0; border-color: var(--primary); }
+
+        #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 30px; font-size: 12px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 5000; white-space: nowrap; }
+        #toast.show { opacity: 1; bottom: 100px; }
+
+        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 8px; }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    </style>
+</head>
+<body>
+
+    <!-- 1. RED BACKGROUND HEADER -->
+    <div class="app-header-bg">
+        <div class="user-info">
+            <img id="user-pic" src="https://via.placeholder.com/50" class="profile-img-main">
+            <div class="welcome-text">
+                <span id="greeting-txt">Welcome Back,</span>
+                <h2 id="user-name">Guest</h2>
+            </div>
+        </div>
+        <div class="lang-btn" onclick="toggleLanguage()">
+            <i class="fa-solid fa-globe"></i> <span id="lang-txt">EN</span>
+        </div>
+    </div>
+
+    <!-- 2. MAIN WHITE SHEET CONTENT -->
+    <div class="main-sheet">
+        <!-- Search -->
+        <div class="search-widget" onclick="openRideForm()">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <span>Where do you want to go?</span>
+        </div>
+
+        <!-- Service Grid -->
+        <div class="services-row">
+            <div class="service-btn" onclick="openRideForm()">
+                <i class="fa-solid fa-car"></i>
+                <span>Ride</span>
+            </div>
+            <div class="service-btn" onclick="showToast('Flash service will be available soon')">
+                <i class="fa-solid fa-bolt"></i>
+                <span>Flash</span>
+            </div>
+            <div class="service-btn" onclick="showToast('Food service will be available soon')">
+                <i class="fa-solid fa-burger"></i>
+                <span>Food</span>
+            </div>
+        </div>
+
+        <!-- Ad Banner -->
+        <div class="ad-banner">
+            Advertisement
+        </div>
+
+        <!-- SOS Button -->
+        <div class="sos-container" onclick="openSOSModal()">
+            <div class="sos-circle">
+                <i class="fa-solid fa-bell"></i>
+            </div>
+            <div class="sos-text">SOS EMERGENCY</div>
+        </div>
+
+        <div class="sheet-spacer"></div>
+    </div>
+
+    <!-- 3. BOTTOM NAVIGATION -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab(this, 'home')">
+            <i class="fa-solid fa-house"></i>
+            <span>Home</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(this, 'activities')">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>Activities</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(this, 'promos')">
+            <i class="fa-solid fa-tag"></i>
+            <span>Promos</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(this, 'profile')">
+            <i class="fa-solid fa-user"></i>
+            <span>Profile</span>
+        </div>
+    </div>
+
+    <!-- 4. SOS POPUP -->
+    <div id="sos-popup" class="popup-overlay">
+        <div class="popup-card">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size:40px; color:#d00000; margin-bottom:10px;"></i>
+            <h3>Emergency</h3>
+            <p style="font-size:12px; color:#666;">Who do you want to call?</p>
+            
+            <div class="sos-grid">
+                <a href="tel:119" class="sos-option sec" style="text-decoration:none;">
+                    <i class="fa-solid fa-shield-halved" style="font-size:24px;"></i>
+                    <span style="font-weight:700;">Security</span>
+                    <span style="font-size:10px;">Call 119</span>
+                </a>
+                <a href="tel:1990" class="sos-option hlt" style="text-decoration:none;">
+                    <i class="fa-solid fa-truck-medical" style="font-size:24px;"></i>
+                    <span style="font-weight:700;">Health</span>
+                    <span style="font-size:10px;">Call 1990</span>
+                </a>
+            </div>
+            <button class="btn" style="margin-top:20px; background:#eee;" onclick="closeSOSModal()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- 5. RIDE FORM OVERLAY -->
+    <div id="ride-form-screen" class="full-screen">
+        <div style="padding:20px; display:flex; align-items:center; gap:15px;">
+            <i class="fa-solid fa-arrow-left" style="font-size:20px; cursor:pointer;" onclick="closeRideForm()"></i>
+            <h3 style="font-size:18px;">Plan your ride</h3>
+        </div>
+        
+        <div class="input-block-col">
+            <div class="input-visuals">
+                <div class="v-dot"></div>
+                <div class="v-line"></div>
+                <div class="v-square"></div>
+            </div>
+            <div class="input-fields">
+                <div class="loc-input" onclick="openSearch('pickup')" id="txt-pickup">Current Location</div>
+                <div class="loc-input ph" onclick="openSearch('dropoff')" id="txt-dropoff">Where to?</div>
+            </div>
+        </div>
+        <div style="padding:20px; margin-top:auto;">
+            <button class="btn btn-primary" onclick="calculateRoute()">Find Best Route</button>
+        </div>
+    </div>
+
+    <!-- 6. SEARCH OVERLAY -->
+    <div id="search-overlay" class="full-screen">
+        <div class="search-header">
+            <i class="fa-solid fa-arrow-left" onclick="closeSearch()"></i>
+            <input type="text" class="search-box" id="search-input" placeholder="Search location..." oninput="handleSearch(this.value)">
+        </div>
+        <div style="padding:15px; display:flex; gap:10px;">
+            <button class="btn btn-outline" style="padding:8px; font-size:12px;" onclick="useCurrentLocation()">
+                <i class="fa-solid fa-location-crosshairs"></i> Current Location
+            </button>
+            <button class="btn btn-outline" style="padding:8px; font-size:12px;" onclick="openMapSelectMode()">
+                <i class="fa-solid fa-map"></i> Pick on Map
+            </button>
+        </div>
+        <div class="res-list">
+            <div id="recent-list"></div>
+            <div id="dynamic-results"></div>
+        </div>
+    </div>
+
+    <!-- 7. MAP SCREENS (Select & Route) -->
+    <div id="map-select-mode" style="display:none; position:fixed; inset:0; z-index:2300;">
+        <div id="map-select-view" style="width:100%; height:100%;"></div>
+        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-100%); z-index:500; pointer-events:none;">
+            <i class="fa-solid fa-location-dot" style="font-size:40px; color:var(--primary); filter:drop-shadow(0 4px 5px rgba(0,0,0,0.3));"></i>
+        </div>
+        <div style="position:absolute; bottom:30px; left:20px; right:20px; z-index:500;">
+            <button class="btn btn-primary" onclick="confirmMapSelection()">Confirm Location</button>
+            <button class="btn" style="margin-top:10px; background:white;" onclick="closeMapSelectMode()">Cancel</button>
+        </div>
+    </div>
+
+    <div id="map-route-screen">
+        <div id="map" style="width:100%; height:100%;"></div>
+        <div style="position:absolute; top:20px; left:20px; z-index:10000;">
+            <button onclick="closeMapScreen()" style="width:40px; height:40px; border-radius:50%; border:none; background:white; box-shadow:0 2px 10px rgba(0,0,0,0.2);"><i class="fa-solid fa-arrow-left"></i></button>
+        </div>
+        
+        <!-- VEHICLE SELECTION CARD -->
+        <div class="route-card" id="route-card">
+            <h3>Select Vehicle</h3>
+            <p style="font-size:12px; color:#666; margin-bottom:10px;" id="route-stats">Calculating...</p>
+            <div class="veh-list" id="vehicle-list">
+                <div class="skeleton" style="min-width:80px; height:80px;"></div>
+                <div class="skeleton" style="min-width:80px; height:80px;"></div>
+            </div>
+            <div style="margin-top:20px;">
+                <button class="btn btn-primary" onclick="showNearbyDrivers()">Show Nearby Drivers</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. DRIVER SELECT -->
+    <div id="driver-select-screen" class="full-screen">
+        <div style="padding:15px; background:white; display:flex; align-items:center; gap:10px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+            <i class="fa-solid fa-arrow-left" style="cursor:pointer;" onclick="closeDriverScreen()"></i>
+            <h3>Available Drivers</h3>
+        </div>
+        <div id="driver-list-container" style="padding:10px; overflow-y:auto; flex:1;"></div>
+    </div>
+
+    <div id="toast"></div>
+    <div id="top-loader"><div class="bar"></div></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXDoV_y0FKcKz2OdbY6UT5qTpCwkokJqg",
+            authDomain: "speedo-a162d.firebaseapp.com",
+            databaseURL: "https://speedo-a162d-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "speedo-a162d",
+            storageBucket: "speedo-a162d.firebasestorage.app",
+            messagingSenderId: "944425759845",
+            appId: "1:944425759845:web:f523b6ddbda9216d3c828c"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // State
+        const userId = localStorage.getItem('speedo_user_id');
+        let currentSearchType = 'pickup';
+        let pickupCoords = null;
+        let dropoffCoords = null;
+        let map, selectMap, routeLine;
+        let pickupMarker, dropoffMarker;
+        let selectedVehicle = 'Tuk';
+        let driverMarkers = {}; 
+        let allActiveGigs = {}; 
+        let activeDriverData = {};
+        let currentRouteDistKm = 0;
+        let currentLang = 'EN';
+
+        // Vehicles
+        const vehicles = [
+            { id: 'Bike', name: 'Bike', icon: 'fa-motorcycle', base: 60, per100m: 4.0 }, 
+            { id: 'Tuk', name: 'Tuk', icon: 'fa-shuttle-van', base: 80, per100m: 6.0 },
+            { id: 'Mini', name: 'Mini', icon: 'fa-car-side', base: 100, per100m: 8.0 },
+            { id: 'Car', name: 'Car', icon: 'fa-car', base: 150, per100m: 12.0 },
+            { id: 'Mini Van', name: 'Mini Van', icon: 'fa-van-shuttle', base: 140, per100m: 11.0 },
+            { id: 'Van', name: 'Van', icon: 'fa-bus', base: 160, per100m: 14.0 }
+        ];
+
+        // --- INIT ---
+        window.onload = () => {
+            if(!userId) window.location.href = 'index.html'; 
+            loadProfile();
+            
+            // Init Maps
+            map = L.map('map', { zoomControl: false }).setView([6.9271, 79.8612], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            
+            selectMap = L.map('map-select-view', { zoomControl: false }).setView([6.9271, 79.8612], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(selectMap);
+
+            setupRealtimeDrivers();
+        };
+
+        // --- UI FUNCTIONS ---
+        window.switchTab = (el, tab) => {
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+            if(tab === 'activities' || tab === 'promos' || tab === 'profile') {
+                window.showToast("This section will be available soon");
+            }
+        };
+
+        window.toggleLanguage = () => {
+            currentLang = currentLang === 'EN' ? 'SI' : 'EN';
+            document.getElementById('lang-txt').innerText = currentLang;
+            window.showToast(`Language changed to ${currentLang === 'EN' ? 'English' : 'Sinhala'}`);
+        };
+
+        window.openSOSModal = () => { document.getElementById('sos-popup').style.display = 'flex'; };
+        window.closeSOSModal = () => { document.getElementById('sos-popup').style.display = 'none'; };
+
+        window.showToast = (msg) => {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        };
+
+        // --- DATA & PROFILE ---
+        async function loadProfile() {
+            try {
+                const snap = await get(ref(db, 'users/' + userId));
+                if(snap.exists()) {
+                    const d = snap.val();
+                    document.getElementById('user-name').innerText = d.fullName.split(' ')[0].toUpperCase();
+                    if(d.profileImage) document.getElementById('user-pic').src = d.profileImage;
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        // --- RIDE FLOW ---
+        window.openRideForm = () => {
+            document.getElementById('ride-form-screen').classList.add('active');
+            if(!pickupCoords) window.useCurrentLocation(true);
+        };
+        window.closeRideForm = () => document.getElementById('ride-form-screen').classList.remove('active');
+
+        // Search
+        window.openSearch = (type) => {
+            currentSearchType = type;
+            document.getElementById('search-overlay').classList.add('active');
+            document.getElementById('search-input').value = '';
+            document.getElementById('search-input').focus();
+            loadResults('');
+        };
+        window.closeSearch = () => document.getElementById('search-overlay').classList.remove('active');
+
+        window.useCurrentLocation = (auto = false) => {
+            const loader = document.getElementById('top-loader');
+            loader.style.display = 'block';
+            if(navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async pos => {
+                    const { latitude: lat, longitude: lng } = pos.coords;
+                    let addr = "Current Location";
+                    try {
+                        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+                        const data = await res.json();
+                        addr = data.display_name.split(',')[0];
+                    } catch(e) {}
+                    setAddress(addr, {lat, lng});
+                    loader.style.display = 'none';
+                    if(!auto) closeSearch();
+                }, () => { loader.style.display = 'none'; if(!auto) showToast("GPS Error"); });
+            } else { loader.style.display = 'none'; }
+        };
+
+        function setAddress(name, coords) {
+            if(currentSearchType === 'pickup') {
+                pickupCoords = coords;
+                document.getElementById('txt-pickup').innerText = name;
+                document.getElementById('txt-pickup').classList.remove('ph');
+                filterDrivers();
+            } else {
+                dropoffCoords = coords;
+                document.getElementById('txt-dropoff').innerText = name;
+                document.getElementById('txt-dropoff').classList.remove('ph');
+            }
+        }
+
+        // Search Logic
+        let debounce;
+        window.handleSearch = (q) => {
+            clearTimeout(debounce);
+            if(q.length < 3) return;
+            debounce = setTimeout(async () => {
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&countrycodes=lk&limit=5`);
+                    loadResults(q, await res.json());
+                } catch(e) {}
+            }, 500);
+        };
+
+        function loadResults(q, api = []) {
+            const list = document.getElementById('dynamic-results');
+            list.innerHTML = '';
+            api.forEach(i => {
+                const d = document.createElement('div');
+                d.className = 'res-item';
+                d.innerHTML = `<i class="fa-solid fa-location-dot" style="color:#888;"></i><div><div style="font-weight:600;font-size:14px;">${i.display_name.split(',')[0]}</div><div style="font-size:11px;color:#999;">${i.display_name}</div></div>`;
+                d.onclick = () => {
+                    setAddress(i.display_name.split(',')[0], {lat:parseFloat(i.lat), lng:parseFloat(i.lon)});
+                    closeSearch();
+                };
+                list.appendChild(d);
+            });
+        }
+
+        // Map Select
+        window.openMapSelectMode = () => {
+            document.getElementById('map-select-mode').style.display = 'block';
+            selectMap.invalidateSize();
+            const t = currentSearchType === 'pickup' && pickupCoords ? pickupCoords : (dropoffCoords || {lat:6.9271, lng:79.8612});
+            selectMap.setView(t, 16);
+        };
+        window.closeMapSelectMode = () => document.getElementById('map-select-mode').style.display = 'none';
+        
+        window.confirmMapSelection = async () => {
+            const c = selectMap.getCenter();
+            closeMapSelectMode(); closeSearch();
+            let name = "Pin Location";
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${c.lat}&lon=${c.lng}&format=json`);
+                name = (await res.json()).display_name.split(',')[0];
+            } catch(e) {}
+            setAddress(name, {lat: c.lat, lng: c.lng});
+        };
+
+        // Routing
+        window.calculateRoute = async () => {
+            if(!pickupCoords || !dropoffCoords) return showToast("Set Pickup & Dropoff");
+            document.getElementById('map-route-screen').style.display = 'block';
+            setTimeout(() => map.invalidateSize(), 200);
+
+            try {
+                const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${pickupCoords.lng},${pickupCoords.lat};${dropoffCoords.lng},${dropoffCoords.lat}?overview=full&geometries=geojson`);
+                const data = await res.json();
+                if(data.routes && data.routes.length) {
+                    const r = data.routes[0];
+                    currentRouteDistKm = r.distance / 1000;
+                    
+                    if(routeLine) map.removeLayer(routeLine);
+                    const latlngs = r.geometry.coordinates.map(c => [c[1], c[0]]);
+                    
+                    // FIX: ADDED className 'route-path-anim'
+                    routeLine = L.polyline(latlngs, {
+                        color: '#E31C25', 
+                        weight: 5,
+                        className: 'route-path-anim' // <--- ANIMATION CLASS ADDED HERE
+                    }).addTo(map);
+                    
+                    map.fitBounds(routeLine.getBounds(), {padding:[50,150]});
+
+                    if(pickupMarker) map.removeLayer(pickupMarker);
+                    if(dropoffMarker) map.removeLayer(dropoffMarker);
+                    
+                    pickupMarker = L.marker(pickupCoords, {icon: createPin('A', 'pin-pickup')}).addTo(map);
+                    dropoffMarker = L.marker(dropoffCoords, {icon: createPin('B', 'pin-drop')}).addTo(map);
+
+                    document.getElementById('route-stats').innerText = `${currentRouteDistKm.toFixed(1)} km • ${(r.duration/60).toFixed(0)} min`;
+                    
+                    // Show Card with Animation
+                    setTimeout(() => {
+                        document.getElementById('route-card').classList.add('show');
+                    }, 500);
+
+                    filterDrivers();
+                }
+            } catch(e) { showToast("Routing Error"); }
+        };
+
+        function createPin(label, cls) {
+            return L.divIcon({ className: `custom-pin ${cls}`, html: label, iconSize:[30,30] });
+        }
+        window.closeMapScreen = () => {
+            document.getElementById('map-route-screen').style.display = 'none';
+            document.getElementById('route-card').classList.remove('show');
+        };
+
+        // Drivers Realtime
+        function setupRealtimeDrivers() {
+            onValue(ref(db, 'active_gigs'), (snap) => {
+                allActiveGigs = snap.val() || {};
+                filterDrivers();
+            });
+        }
+
+        function filterDrivers() {
+            const center = pickupCoords || (map ? map.getCenter() : {lat:6.9271, lng:79.8612});
+            activeDriverData = {};
+            
+            Object.keys(allActiveGigs).forEach(vt => {
+                const drivers = allActiveGigs[vt];
+                Object.keys(drivers).forEach(did => {
+                    const d = drivers[did];
+                    const dist = getDist(center, d.location);
+                    if(dist <= 20) {
+                        if(!activeDriverData[vt]) activeDriverData[vt] = [];
+                        activeDriverData[vt].push({...d, dist});
+                    }
+                });
+            });
+
+            updateMapMarkers();
+            updateVehList();
+        }
+
+        function updateMapMarkers() {
+            const drivers = activeDriverData[selectedVehicle] || [];
+            const activeIds = drivers.map(d => d.driver_id);
+
+            Object.keys(driverMarkers).forEach(id => {
+                if(!activeIds.includes(id)) { map.removeLayer(driverMarkers[id]); delete driverMarkers[id]; }
+            });
+
+            drivers.forEach(d => {
+                if(driverMarkers[d.driver_id]) driverMarkers[d.driver_id].setLatLng(d.location);
+                else driverMarkers[d.driver_id] = L.marker(d.location, {icon: L.divIcon({className: 'veh-rect-marker'})}).addTo(map);
+            });
+        }
+
+        function updateVehList() {
+            const list = document.getElementById('vehicle-list');
+            list.innerHTML = '';
+            vehicles.forEach(v => {
+                const count = (activeDriverData[v.id] || []).length;
+                const d = document.createElement('div');
+                d.className = `veh-item ${selectedVehicle === v.id ? 'selected' : ''}`;
+                d.innerHTML = `<i class="fa-solid ${v.icon}" style="font-size:20px; color:${selectedVehicle===v.id ? '#E31C25':'#555'}"></i><span style="font-size:12px; font-weight:600;">${v.name}</span><span style="font-size:10px; color:#999;">${count} Nearby</span>`;
+                d.onclick = () => { selectedVehicle = v.id; updateVehList(); updateMapMarkers(); };
+                list.appendChild(d);
+            });
+        }
+
+        // Driver List & Book
+        window.showNearbyDrivers = () => {
+            document.getElementById('driver-select-screen').classList.add('active');
+            const list = document.getElementById('driver-list-container');
+            const drivers = activeDriverData[selectedVehicle] || [];
+            if(!drivers.length) { list.innerHTML = "<p style='text-align:center;color:#999;margin-top:50px;'>No drivers nearby</p>"; return; }
+
+            const vConf = vehicles.find(v => v.id === selectedVehicle);
+            const price = Math.ceil(vConf.base + (currentRouteDistKm * 10 * vConf.per100m));
+            
+            list.innerHTML = drivers.map(d => `
+                <div class="driver-card-fancy">
+                    <div class="dc-top">
+                        <div style="display:flex; flex-direction:column; align-items:center;">
+                            <img src="${d.profile_pic}" class="dc-profile">
+                            <div class="dc-car-icon"><i class="fa-solid ${vConf.icon}"></i></div>
+                        </div>
+                        <div class="dc-info">
+                            <div class="dc-name">${d.driver_name}</div>
+                            <div style="font-size:11px; color:#666;">${d.vehicle_plate} • ${d.dist.toFixed(1)} km away</div>
+                            <div class="dc-price">LKR ${price.toLocaleString()}</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" style="padding:10px; font-size:13px;" onclick="bookRide('${d.driver_id}', ${price})">Request</button>
+                </div>
+            `).join('');
+        };
+        window.closeDriverScreen = () => document.getElementById('driver-select-screen').classList.remove('active');
+
+        window.bookRide = (dId, price) => {
+            const reqId = Date.now().toString();
+            set(ref(db, 'ride_requests/' + reqId), {
+                user_id: userId, driver_id: dId, pickup: pickupCoords, dropoff: dropoffCoords,
+                vehicle: selectedVehicle, estimated_price: price, status: 'pending', timestamp: Date.now()
+            }).then(() => { showToast("Request Sent!"); closeDriverScreen(); });
+        };
+
+        // Maths
+        function getDist(c1, c2) {
+            const R = 6371, dLat = (c2.lat-c1.lat)*Math.PI/180, dLon = (c2.lng-c1.lng)*Math.PI/180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(c1.lat*Math.PI/180)*Math.cos(c2.lat*Math.PI/180) * Math.sin(dLon/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        window.bookRide = window.bookRide; 
+    </script>
+</body>
+</html>
