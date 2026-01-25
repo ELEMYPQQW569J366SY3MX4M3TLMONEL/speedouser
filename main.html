@@ -3,395 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SPEEDO App</title>
-
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>SPEEDO User</title>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Leaflet & Routing -->
+    <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <style>
-        :root {
-            --primary: #E31C25; /* Speedo Red */
-            --dark-red: #b9151c;
-            --text: #333;
-            --bg-gray: #f2f4f6;
-            --white: #ffffff;
-            --shadow-soft: 0 10px 30px rgba(0,0,0,0.08);
-            --shadow-card: 0 4px 15px rgba(0,0,0,0.05);
-            --nav-height: 70px;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; outline: none; }
-        body { font-family: 'Poppins', sans-serif; background: var(--bg-gray); height: 100vh; width: 100vw; overflow: hidden; display: flex; flex-direction: column; }
-
-        /* --- UTILS --- */
-        .hidden { display: none !important; }
-        .full-screen { position: fixed; inset: 0; background: white; z-index: 2000; display: flex; flex-direction: column; overflow: hidden; }
-        .btn { width: 100%; padding: 14px; border-radius: 12px; font-weight: 600; text-align: center; border: none; cursor: pointer; transition: 0.2s; font-size: 15px; }
-        .btn:active { transform: scale(0.98); }
-        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(227, 28, 37, 0.3); }
-        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
-
-        /* --- TOP LOADER --- */
-        #top-loader { position: fixed; top: 0; left: 0; width: 100%; height: 4px; background: rgba(255,255,255,0.3); z-index: 9999; display: none; }
-        #top-loader .bar { height: 100%; background: #fff; width: 0%; animation: loadingBar 1.5s infinite linear; }
-        @keyframes loadingBar { 0% { width: 0%; margin-left: 0; } 50% { width: 50%; margin-left: 25%; } 100% { width: 0%; margin-left: 100%; } }
-
-        /* --- MAIN UI STRUCTURE --- */
-        .app-header-bg {
-            position: fixed; top: 0; left: 0; width: 100%; height: 25vh;
-            background: var(--primary); z-index: 1;
-            padding: 20px; color: white;
-            display: flex; justify-content: space-between; align-items: flex-start;
-            padding-top: 40px;
-        }
+        :root { --primary: #E31C25; --text: #333; --bg: #f4f6f8; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; -webkit-tap-highlight-color:transparent; }
+        body { background:var(--bg); height:100vh; overflow:hidden; display:flex; flex-direction:column; }
         
-        .user-info { display: flex; align-items: center; gap: 12px; }
-        .profile-img-main { width: 50px; height: 50px; border-radius: 50%; border: 2px solid white; object-fit: cover; background: #ddd; }
-        .welcome-text span { font-size: 12px; opacity: 0.9; }
-        .welcome-text h2 { font-size: 20px; font-weight: 700; line-height: 1.1; }
-
-        .lang-btn {
-            background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px;
-            font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px;
-        }
-
-        .main-sheet {
-            position: fixed; top: 140px; left: 0; width: 100%; bottom: var(--nav-height);
-            background: var(--bg-gray);
-            border-radius: 30px 30px 0 0;
-            z-index: 10;
-            overflow-y: auto;
-            padding: 25px 20px 80px 20px;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
-        }
-
-        .search-widget {
-            background: #e6e6e6; padding: 15px 20px; border-radius: 30px;
-            display: flex; align-items: center; gap: 15px; margin-bottom: 25px;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); cursor: pointer;
-        }
-        .search-widget i { font-size: 18px; color: #555; }
-        .search-widget span { font-weight: 600; color: #333; font-size: 14px; }
-
-        .services-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-        .service-btn {
-            background: #e0e0e0; aspect-ratio: 1; border-radius: 20px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s;
-        }
-        .service-btn:active { transform: scale(0.95); }
-        .service-btn i { font-size: 24px; color: #333; }
-        .service-btn span { font-weight: 600; font-size: 13px; color: #333; }
-
-        .ad-banner {
-            width: 100%; height: 140px; background: linear-gradient(135deg, #ff9966, #ff5e62);
-            border-radius: 20px; margin-bottom: 25px; display: flex; align-items: center; justify-content: center;
-            color: white; font-weight: 700; font-size: 18px; text-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            box-shadow: var(--shadow-card); position: relative; overflow: hidden;
-        }
-        .ad-banner::after { content: 'PROMO 50% OFF'; position: absolute; bottom: 10px; right: 15px; font-size: 12px; background: white; color: var(--primary); padding: 4px 10px; border-radius: 10px; }
-
-        .sos-container {
-            background: #e0e0e0; border-radius: 40px; padding: 10px;
-            display: flex; align-items: center; gap: 15px;
-            box-shadow: var(--shadow-card); cursor: pointer;
-        }
-        .sos-circle {
-            width: 50px; height: 50px; background: #d00000; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; color: white; font-size: 20px;
-            box-shadow: 0 4px 10px rgba(208, 0, 0, 0.4);
-        }
-        .sos-text { font-weight: 700; font-size: 16px; color: #333; }
-        .sheet-spacer { height: 100px; background: #e0e0e0; border-radius: 20px; margin-top: 25px; opacity: 0.5; }
-
-        /* --- BOTTOM NAVIGATION --- */
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: var(--nav-height);
-            background: white; z-index: 100;
-            display: flex; justify-content: space-around; align-items: center;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.05); border-top: 1px solid #eee;
-        }
-        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #999; font-size: 10px; font-weight: 600; cursor: pointer; width: 60px; }
-        .nav-item i { font-size: 20px; transition: 0.2s; }
-        .nav-item.active { color: var(--primary); }
-        .nav-item.active i { transform: translateY(-2px); }
-
-        /* --- POPUPS & MODALS --- */
-        .popup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
-        .popup-card { background: white; padding: 25px; border-radius: 25px; width: 85%; max-width: 320px; text-align: center; animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        /* Map & UI Layers */
+        #map { width:100%; height:100vh; z-index:0; }
+        .ui-overlay { position:fixed; inset:0; pointer-events:none; z-index:1000; display:flex; flex-direction:column; }
+        .pointer-auto { pointer-events:auto; }
         
-        .sos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .sos-option { padding: 20px 10px; border-radius: 15px; border: 2px solid #eee; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .sos-option.sec { background: #fff5f5; border-color: #ffcccc; color: #d00000; }
-        .sos-option.hlt { background: #f0fff4; border-color: #c6f6d5; color: #2f855a; }
-
-        /* --- RIDE UI OVERLAYS --- */
-        #ride-form-screen { z-index: 2100; transform: translateY(100%); transition: transform 0.3s; background: white; }
-        #ride-form-screen.active { transform: translateY(0); }
-        .input-block-col { margin: 20px; padding: 15px; border: 1px solid #eee; border-radius: 16px; display: flex; gap: 10px; box-shadow: var(--shadow-card); }
-        .input-visuals { display: flex; flex-direction: column; align-items: center; padding-top: 5px; gap: 4px; }
-        .v-dot { width: 8px; height: 8px; background: black; border-radius: 50%; }
-        .v-line { width: 2px; flex: 1; background: #eee; min-height: 20px; }
-        .v-square { width: 8px; height: 8px; background: var(--primary); }
-        .input-fields { flex: 1; display: flex; flex-direction: column; gap: 15px; }
-        .loc-input { font-size: 14px; padding: 10px; background: #f9f9f9; border-radius: 8px; color: #333; }
-        .loc-input.ph { color: #888; }
-
-        #search-overlay { z-index: 2200; display: none; }
-        #search-overlay.active { display: flex; }
-        .search-header { padding: 15px; border-bottom: 1px solid #eee; display: flex; gap: 10px; align-items: center; }
-        .search-box { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; }
-        .res-list { flex: 1; overflow-y: auto; padding: 10px 20px; }
-        .res-item { padding: 15px 0; border-bottom: 1px solid #f0f0f0; display: flex; gap: 15px; align-items: center; cursor: pointer; }
-
-        #map-route-screen { z-index: 2150; display: none; position: fixed; inset: 0; }
-        #driver-select-screen { z-index: 2160; transform: translateX(100%); transition: transform 0.3s; background: #f8f9fa; }
-        #driver-select-screen.active { transform: translateX(0); }
-
-        /* DRIVER CARD */
-        .driver-card-fancy {
-            background: white; margin: 12px 15px; padding: 12px; border-radius: 16px;
-            box-shadow: var(--shadow-card); border: 1px solid #eee; display: flex; flex-direction: column; gap: 10px;
+        /* Cards */
+        .bottom-card {
+            background:white; border-radius:20px 20px 0 0; padding:20px;
+            box-shadow:0 -5px 20px rgba(0,0,0,0.1); margin-top:auto;
+            transform:translateY(100%); transition:0.3s; max-height:80vh; overflow-y:auto;
         }
-        .dc-top { display: flex; align-items: center; gap: 12px; }
-        .dc-profile { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
-        .dc-car-icon { width: 22px; height: 22px; border-radius: 50%; background: #333; color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; margin-left: -15px; margin-bottom: -25px; z-index: 2; border: 2px solid white; }
-        .dc-info { flex: 1; }
-        .dc-name { font-weight: 700; font-size: 15px; }
-        .dc-price { color: #00b894; font-weight: 700; font-size: 16px; float: right; }
+        .bottom-card.active { transform:translateY(0); }
+
+        /* Inputs */
+        .search-trigger { background:white; margin:20px; padding:15px; border-radius:10px; box-shadow:0 5px 15px rgba(0,0,0,0.1); display:flex; gap:10px; align-items:center; cursor:pointer; }
         
-        /* MAP MARKERS & ANIMATION */
-        .veh-rect-marker { background: var(--primary); border: 2px solid white; width: 24px !important; height: 14px !important; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); margin-left: -12px !important; margin-top: -7px !important; }
-        .custom-pin { background: #333; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .pin-drop { background: var(--primary); }
+        /* Ride UI */
+        .driver-info-strip { display:flex; align-items:center; gap:15px; padding-bottom:15px; border-bottom:1px solid #eee; margin-bottom:15px; }
+        .driver-pic { width:50px; height:50px; border-radius:50%; object-fit:cover; border:2px solid var(--primary); }
+        .status-badge { background:#eee; padding:5px 10px; border-radius:15px; font-size:12px; font-weight:700; }
+        .chat-box { height:150px; background:#f9f9f9; border-radius:10px; overflow-y:auto; padding:10px; margin-bottom:10px; border:1px solid #eee; }
+        .chat-msg { margin-bottom:5px; font-size:12px; padding:5px 8px; border-radius:8px; max-width:80%; }
+        .chat-msg.me { background:#e3f2fd; margin-left:auto; }
+        .chat-msg.them { background:white; border:1px solid #ddd; }
 
-        /* ANIMATED DOT LINE CSS */
-        .route-path-anim {
-            stroke-dasharray: 15, 15;
-            animation: dash 1s linear infinite;
-        }
-        @keyframes dash {
-            to { stroke-dashoffset: -30; }
-        }
+        .btn { width:100%; padding:12px; border:none; border-radius:10px; font-weight:600; cursor:pointer; background:#eee; color:#333; margin-top:5px; }
+        .btn-primary { background:var(--primary); color:white; }
+        .btn-green { background:#2e7d32; color:white; }
         
-        /* VEHICLE LIST (BOTTOM CARD) */
-        .route-card { 
-            position: absolute; bottom: 0; left: 0; width: 100%; 
-            background: white; border-radius: 25px 25px 0 0; 
-            padding: 20px; 
-            transform: translateY(100%); transition: 0.4s; 
-            box-shadow: 0 -5px 25px rgba(0,0,0,0.1); 
-            z-index: 9999; /* FIX: Increased Z-Index to sit on top of map */
-        }
-        .route-card.show { transform: translateY(0); }
-        .veh-list { display: flex; gap: 15px; overflow-x: auto; padding: 10px 0; scrollbar-width: none; }
-        .veh-item { min-width: 80px; padding: 10px; border: 1px solid #eee; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .veh-item.selected { background: #fff0f0; border-color: var(--primary); }
+        .full-screen { position:fixed; inset:0; background:white; z-index:2000; display:none; flex-direction:column; }
+        .full-screen.show { display:flex; }
+        
+        /* Vehicle List */
+        .veh-item { padding:10px; border:1px solid #eee; margin-bottom:8px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+        .veh-item.selected { border-color:var(--primary); background:#fff5f5; }
 
-        #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 30px; font-size: 12px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 5000; white-space: nowrap; }
-        #toast.show { opacity: 1; bottom: 100px; }
-
-        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 8px; }
-        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
+        /* Animation */
+        .pulse { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity:1; } 50% { opacity:0.5; } 100% { opacity:1; } }
     </style>
 </head>
 <body>
 
-    <!-- 1. RED BACKGROUND HEADER -->
-    <div class="app-header-bg">
-        <div class="user-info">
-            <img id="user-pic" src="https://via.placeholder.com/50" class="profile-img-main">
-            <div class="welcome-text">
-                <span id="greeting-txt">Welcome Back,</span>
-                <h2 id="user-name">Guest</h2>
+    <div id="map"></div>
+
+    <div class="ui-overlay">
+        <!-- Header -->
+        <div class="pointer-auto search-trigger" onclick="openSearch()">
+            <i class="fa-solid fa-bars"></i>
+            <span id="loc-display">Where to go?</span>
+        </div>
+
+        <!-- 1. Vehicle Selection Panel -->
+        <div id="panel-select" class="pointer-auto bottom-card">
+            <h3>Select Ride</h3>
+            <div id="veh-list" style="margin:15px 0;"></div>
+            <button class="btn btn-primary" onclick="requestRide()">Find Driver</button>
+        </div>
+
+        <!-- 2. Searching / Finding Panel -->
+        <div id="panel-searching" class="pointer-auto bottom-card" style="text-align:center;">
+            <div class="pulse" style="font-size:40px; color:var(--primary); margin-bottom:15px;">
+                <i class="fa-solid fa-satellite-dish"></i>
             </div>
-        </div>
-        <div class="lang-btn" onclick="toggleLanguage()">
-            <i class="fa-solid fa-globe"></i> <span id="lang-txt">EN</span>
-        </div>
-    </div>
-
-    <!-- 2. MAIN WHITE SHEET CONTENT -->
-    <div class="main-sheet">
-        <!-- Search -->
-        <div class="search-widget" onclick="openRideForm()">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <span>Where do you want to go?</span>
+            <h3>Connecting...</h3>
+            <p>Finding the best driver for you.</p>
+            <button class="btn" onclick="cancelRequest()">Cancel</button>
         </div>
 
-        <!-- Service Grid -->
-        <div class="services-row">
-            <div class="service-btn" onclick="openRideForm()">
-                <i class="fa-solid fa-car"></i>
-                <span>Ride</span>
+        <!-- 3. Active Ride Panel -->
+        <div id="panel-ride" class="pointer-auto bottom-card">
+            <div class="driver-info-strip">
+                <img id="d-pic" src="" class="driver-pic">
+                <div style="flex:1;">
+                    <h4 id="d-name">Driver Name</h4>
+                    <div style="font-size:12px; color:#666;"><span id="d-veh">Vehicle</span> • <span id="d-plate">ABC-1234</span></div>
+                </div>
+                <div class="status-badge" id="ride-status">COMING</div>
+                <a id="d-call" href="#" class="btn btn-green" style="width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:50%; text-decoration:none;"><i class="fa-solid fa-phone"></i></a>
             </div>
-            <div class="service-btn" onclick="showToast('Flash service will be available soon')">
-                <i class="fa-solid fa-bolt"></i>
-                <span>Flash</span>
-            </div>
-            <div class="service-btn" onclick="showToast('Food service will be available soon')">
-                <i class="fa-solid fa-burger"></i>
-                <span>Food</span>
-            </div>
-        </div>
-
-        <!-- Ad Banner -->
-        <div class="ad-banner">
-            Advertisement
-        </div>
-
-        <!-- SOS Button -->
-        <div class="sos-container" onclick="openSOSModal()">
-            <div class="sos-circle">
-                <i class="fa-solid fa-bell"></i>
-            </div>
-            <div class="sos-text">SOS EMERGENCY</div>
-        </div>
-
-        <div class="sheet-spacer"></div>
-    </div>
-
-    <!-- 3. BOTTOM NAVIGATION -->
-    <div class="bottom-nav">
-        <div class="nav-item active" onclick="switchTab(this, 'home')">
-            <i class="fa-solid fa-house"></i>
-            <span>Home</span>
-        </div>
-        <div class="nav-item" onclick="switchTab(this, 'activities')">
-            <i class="fa-solid fa-clock-rotate-left"></i>
-            <span>Activities</span>
-        </div>
-        <div class="nav-item" onclick="switchTab(this, 'promos')">
-            <i class="fa-solid fa-tag"></i>
-            <span>Promos</span>
-        </div>
-        <div class="nav-item" onclick="switchTab(this, 'profile')">
-            <i class="fa-solid fa-user"></i>
-            <span>Profile</span>
-        </div>
-    </div>
-
-    <!-- 4. SOS POPUP -->
-    <div id="sos-popup" class="popup-overlay">
-        <div class="popup-card">
-            <i class="fa-solid fa-triangle-exclamation" style="font-size:40px; color:#d00000; margin-bottom:10px;"></i>
-            <h3>Emergency</h3>
-            <p style="font-size:12px; color:#666;">Who do you want to call?</p>
             
-            <div class="sos-grid">
-                <a href="tel:119" class="sos-option sec" style="text-decoration:none;">
-                    <i class="fa-solid fa-shield-halved" style="font-size:24px;"></i>
-                    <span style="font-weight:700;">Security</span>
-                    <span style="font-size:10px;">Call 119</span>
-                </a>
-                <a href="tel:1990" class="sos-option hlt" style="text-decoration:none;">
-                    <i class="fa-solid fa-truck-medical" style="font-size:24px;"></i>
-                    <span style="font-weight:700;">Health</span>
-                    <span style="font-size:10px;">Call 1990</span>
-                </a>
+            <!-- Chat Area -->
+            <div class="chat-box" id="chat-feed"></div>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="chat-input" placeholder="Message..." style="flex:1; padding:10px; border:1px solid #ddd; border-radius:20px;">
+                <button onclick="sendMsg()" style="width:40px; height:40px; border-radius:50%; border:none; background:var(--primary); color:white;"><i class="fa-solid fa-paper-plane"></i></button>
             </div>
-            <button class="btn" style="margin-top:20px; background:#eee;" onclick="closeSOSModal()">Cancel</button>
-        </div>
-    </div>
-
-    <!-- 5. RIDE FORM OVERLAY -->
-    <div id="ride-form-screen" class="full-screen">
-        <div style="padding:20px; display:flex; align-items:center; gap:15px;">
-            <i class="fa-solid fa-arrow-left" style="font-size:20px; cursor:pointer;" onclick="closeRideForm()"></i>
-            <h3 style="font-size:18px;">Plan your ride</h3>
         </div>
         
-        <div class="input-block-col">
-            <div class="input-visuals">
-                <div class="v-dot"></div>
-                <div class="v-line"></div>
-                <div class="v-square"></div>
+        <!-- 4. Rating Panel -->
+        <div id="panel-rating" class="pointer-auto bottom-card" style="text-align:center;">
+            <h2 style="color:var(--primary);">Ride Completed!</h2>
+            <h1 id="final-bill" style="font-size:3rem; margin:10px 0;">0 LKR</h1>
+            <p>How was your driver?</p>
+            <div style="font-size:30px; color:gold; margin:15px 0;">
+                <i class="fa-solid fa-star" onclick="rate(1)"></i>
+                <i class="fa-solid fa-star" onclick="rate(2)"></i>
+                <i class="fa-solid fa-star" onclick="rate(3)"></i>
+                <i class="fa-solid fa-star" onclick="rate(4)"></i>
+                <i class="fa-solid fa-star" onclick="rate(5)"></i>
             </div>
-            <div class="input-fields">
-                <div class="loc-input" onclick="openSearch('pickup')" id="txt-pickup">Current Location</div>
-                <div class="loc-input ph" onclick="openSearch('dropoff')" id="txt-dropoff">Where to?</div>
-            </div>
-        </div>
-        <div style="padding:20px; margin-top:auto;">
-            <button class="btn btn-primary" onclick="calculateRoute()">Find Best Route</button>
+            <button class="btn btn-primary" onclick="submitRating()">Submit & Close</button>
         </div>
     </div>
 
-    <!-- 6. SEARCH OVERLAY -->
-    <div id="search-overlay" class="full-screen">
-        <div class="search-header">
-            <i class="fa-solid fa-arrow-left" onclick="closeSearch()"></i>
-            <input type="text" class="search-box" id="search-input" placeholder="Search location..." oninput="handleSearch(this.value)">
+    <!-- Search Overlay -->
+    <div id="screen-search" class="full-screen">
+        <div style="padding:20px; display:flex; gap:10px;">
+            <button onclick="closeSearch()" style="background:none; border:none;"><i class="fa-solid fa-arrow-left"></i></button>
+            <input id="inp-pickup" placeholder="Pickup Location" value="Current Location" style="width:100%; padding:10px;">
         </div>
-        <div style="padding:15px; display:flex; gap:10px;">
-            <button class="btn btn-outline" style="padding:8px; font-size:12px;" onclick="useCurrentLocation()">
-                <i class="fa-solid fa-location-crosshairs"></i> Current Location
-            </button>
-            <button class="btn btn-outline" style="padding:8px; font-size:12px;" onclick="openMapSelectMode()">
-                <i class="fa-solid fa-map"></i> Pick on Map
-            </button>
-        </div>
-        <div class="res-list">
-            <div id="recent-list"></div>
-            <div id="dynamic-results"></div>
+        <div style="padding:0 20px;">
+            <input id="inp-dropoff" placeholder="Where to?" onchange="calcRoute()" style="width:100%; padding:10px; background:#f5f5f5; border:1px solid #ddd; border-radius:8px;">
         </div>
     </div>
 
-    <!-- 7. MAP SCREENS (Select & Route) -->
-    <div id="map-select-mode" style="display:none; position:fixed; inset:0; z-index:2300;">
-        <div id="map-select-view" style="width:100%; height:100%;"></div>
-        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-100%); z-index:500; pointer-events:none;">
-            <i class="fa-solid fa-location-dot" style="font-size:40px; color:var(--primary); filter:drop-shadow(0 4px 5px rgba(0,0,0,0.3));"></i>
-        </div>
-        <div style="position:absolute; bottom:30px; left:20px; right:20px; z-index:500;">
-            <button class="btn btn-primary" onclick="confirmMapSelection()">Confirm Location</button>
-            <button class="btn" style="margin-top:10px; background:white;" onclick="closeMapSelectMode()">Cancel</button>
-        </div>
-    </div>
-
-    <div id="map-route-screen">
-        <div id="map" style="width:100%; height:100%;"></div>
-        <div style="position:absolute; top:20px; left:20px; z-index:10000;">
-            <button onclick="closeMapScreen()" style="width:40px; height:40px; border-radius:50%; border:none; background:white; box-shadow:0 2px 10px rgba(0,0,0,0.2);"><i class="fa-solid fa-arrow-left"></i></button>
-        </div>
-        
-        <!-- VEHICLE SELECTION CARD -->
-        <div class="route-card" id="route-card">
-            <h3>Select Vehicle</h3>
-            <p style="font-size:12px; color:#666; margin-bottom:10px;" id="route-stats">Calculating...</p>
-            <div class="veh-list" id="vehicle-list">
-                <div class="skeleton" style="min-width:80px; height:80px;"></div>
-                <div class="skeleton" style="min-width:80px; height:80px;"></div>
-            </div>
-            <div style="margin-top:20px;">
-                <button class="btn btn-primary" onclick="showNearbyDrivers()">Show Nearby Drivers</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 8. DRIVER SELECT -->
-    <div id="driver-select-screen" class="full-screen">
-        <div style="padding:15px; background:white; display:flex; align-items:center; gap:10px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
-            <i class="fa-solid fa-arrow-left" style="cursor:pointer;" onclick="closeDriverScreen()"></i>
-            <h3>Available Drivers</h3>
-        </div>
-        <div id="driver-list-container" style="padding:10px; overflow-y:auto; flex:1;"></div>
-    </div>
-
-    <div id="toast"></div>
-    <div id="top-loader"><div class="bar"></div></div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-
+    <script>
+        // --- CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyAXDoV_y0FKcKz2OdbY6UT5qTpCwkokJqg",
             authDomain: "speedo-a162d.firebaseapp.com",
@@ -401,332 +146,290 @@
             messagingSenderId: "944425759845",
             appId: "1:944425759845:web:f523b6ddbda9216d3c828c"
         };
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
         // State
-        const userId = localStorage.getItem('speedo_user_id');
-        let currentSearchType = 'pickup';
-        let pickupCoords = null;
-        let dropoffCoords = null;
-        let map, selectMap, routeLine;
-        let pickupMarker, dropoffMarker;
+        const userId = localStorage.getItem('speedo_uid') || 'user_' + Date.now();
+        localStorage.setItem('speedo_uid', userId);
+        
+        let map, userMarker, driverMarker, routeLine;
+        let pickupCoords = null, dropoffCoords = null;
+        let availableDrivers = [];
         let selectedVehicle = 'Tuk';
-        let driverMarkers = {}; 
-        let allActiveGigs = {}; 
-        let activeDriverData = {};
-        let currentRouteDistKm = 0;
-        let currentLang = 'EN';
+        let currentRequestId = null;
+        let rejectedDrivers = [];
+        let rideListener = null;
 
-        // Vehicles
-        const vehicles = [
-            { id: 'Bike', name: 'Bike', icon: 'fa-motorcycle', base: 60, per100m: 4.0 }, 
-            { id: 'Tuk', name: 'Tuk', icon: 'fa-shuttle-van', base: 80, per100m: 6.0 },
-            { id: 'Mini', name: 'Mini', icon: 'fa-car-side', base: 100, per100m: 8.0 },
-            { id: 'Car', name: 'Car', icon: 'fa-car', base: 150, per100m: 12.0 },
-            { id: 'Mini Van', name: 'Mini Van', icon: 'fa-van-shuttle', base: 140, per100m: 11.0 },
-            { id: 'Van', name: 'Van', icon: 'fa-bus', base: 160, per100m: 14.0 }
-        ];
-
-        // --- INIT ---
+        // Init
         window.onload = () => {
-            if(!userId) window.location.href = 'index.html'; 
-            loadProfile();
-            
-            // Init Maps
-            map = L.map('map', { zoomControl: false }).setView([6.9271, 79.8612], 13);
+            map = L.map('map', {zoomControl:false}).setView([6.9271, 79.8612], 14);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
             
-            selectMap = L.map('map-select-view', { zoomControl: false }).setView([6.9271, 79.8612], 15);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(selectMap);
-
-            setupRealtimeDrivers();
-        };
-
-        // --- UI FUNCTIONS ---
-        window.switchTab = (el, tab) => {
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            el.classList.add('active');
-            if(tab === 'activities' || tab === 'promos' || tab === 'profile') {
-                window.showToast("This section will be available soon");
-            }
-        };
-
-        window.toggleLanguage = () => {
-            currentLang = currentLang === 'EN' ? 'SI' : 'EN';
-            document.getElementById('lang-txt').innerText = currentLang;
-            window.showToast(`Language changed to ${currentLang === 'EN' ? 'English' : 'Sinhala'}`);
-        };
-
-        window.openSOSModal = () => { document.getElementById('sos-popup').style.display = 'flex'; };
-        window.closeSOSModal = () => { document.getElementById('sos-popup').style.display = 'none'; };
-
-        window.showToast = (msg) => {
-            const t = document.getElementById('toast');
-            t.innerText = msg; t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 3000);
-        };
-
-        // --- DATA & PROFILE ---
-        async function loadProfile() {
-            try {
-                const snap = await get(ref(db, 'users/' + userId));
-                if(snap.exists()) {
-                    const d = snap.val();
-                    document.getElementById('user-name').innerText = d.fullName.split(' ')[0].toUpperCase();
-                    if(d.profileImage) document.getElementById('user-pic').src = d.profileImage;
-                }
-            } catch(e) { console.error(e); }
-        }
-
-        // --- RIDE FLOW ---
-        window.openRideForm = () => {
-            document.getElementById('ride-form-screen').classList.add('active');
-            if(!pickupCoords) window.useCurrentLocation(true);
-        };
-        window.closeRideForm = () => document.getElementById('ride-form-screen').classList.remove('active');
-
-        // Search
-        window.openSearch = (type) => {
-            currentSearchType = type;
-            document.getElementById('search-overlay').classList.add('active');
-            document.getElementById('search-input').value = '';
-            document.getElementById('search-input').focus();
-            loadResults('');
-        };
-        window.closeSearch = () => document.getElementById('search-overlay').classList.remove('active');
-
-        window.useCurrentLocation = (auto = false) => {
-            const loader = document.getElementById('top-loader');
-            loader.style.display = 'block';
             if(navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(async pos => {
-                    const { latitude: lat, longitude: lng } = pos.coords;
-                    let addr = "Current Location";
-                    try {
-                        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
-                        const data = await res.json();
-                        addr = data.display_name.split(',')[0];
-                    } catch(e) {}
-                    setAddress(addr, {lat, lng});
-                    loader.style.display = 'none';
-                    if(!auto) closeSearch();
-                }, () => { loader.style.display = 'none'; if(!auto) showToast("GPS Error"); });
-            } else { loader.style.display = 'none'; }
+                navigator.geolocation.getCurrentPosition(pos => {
+                    pickupCoords = {lat: pos.coords.latitude, lng: pos.coords.longitude};
+                    map.setView(pickupCoords, 16);
+                    userMarker = L.marker(pickupCoords).addTo(map).bindPopup("You");
+                    updateAddress(pickupCoords);
+                    fetchNearbyDrivers();
+                });
+            }
         };
 
-        function setAddress(name, coords) {
-            if(currentSearchType === 'pickup') {
-                pickupCoords = coords;
-                document.getElementById('txt-pickup').innerText = name;
-                document.getElementById('txt-pickup').classList.remove('ph');
-                filterDrivers();
-            } else {
-                dropoffCoords = coords;
-                document.getElementById('txt-dropoff').innerText = name;
-                document.getElementById('txt-dropoff').classList.remove('ph');
+        // --- CORE FUNCTIONS ---
+
+        function openSearch() { document.getElementById('screen-search').classList.add('show'); }
+        function closeSearch() { document.getElementById('screen-search').classList.remove('show'); }
+
+        async function updateAddress(coords) {
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${coords.lat}&lon=${coords.lng}&format=json`);
+                const data = await res.json();
+                document.getElementById('loc-display').innerText = data.display_name.split(',')[0];
+                document.getElementById('inp-pickup').value = data.display_name.split(',')[0];
+            } catch(e) {}
+        }
+
+        async function calcRoute() {
+            const query = document.getElementById('inp-dropoff').value;
+            if(!query) return;
+            
+            // Geocode dropoff
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&countrycodes=lk`);
+            const data = await res.json();
+            if(!data.length) return alert("Location not found");
+            
+            dropoffCoords = {lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon)};
+            closeSearch();
+            
+            // Draw Route
+            const routeUrl = `https://router.project-osrm.org/route/v1/driving/${pickupCoords.lng},${pickupCoords.lat};${dropoffCoords.lng},${dropoffCoords.lat}?overview=full&geometries=geojson`;
+            const rRes = await fetch(routeUrl);
+            const rData = await rRes.json();
+            
+            if(rData.routes.length) {
+                const r = rData.routes[0];
+                const latlngs = r.geometry.coordinates.map(c => [c[1], c[0]]);
+                if(routeLine) map.removeLayer(routeLine);
+                routeLine = L.polyline(latlngs, {color: '#E31C25', weight: 5}).addTo(map);
+                map.fitBounds(routeLine.getBounds(), {padding:[50,50]});
+                
+                // Show Vehicle Panel
+                const distKm = r.distance / 1000;
+                showVehicleSelect(distKm);
             }
         }
 
-        // Search Logic
-        let debounce;
-        window.handleSearch = (q) => {
-            clearTimeout(debounce);
-            if(q.length < 3) return;
-            debounce = setTimeout(async () => {
-                try {
-                    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&countrycodes=lk&limit=5`);
-                    loadResults(q, await res.json());
-                } catch(e) {}
-            }, 500);
-        };
-
-        function loadResults(q, api = []) {
-            const list = document.getElementById('dynamic-results');
+        function showVehicleSelect(dist) {
+            document.getElementById('panel-select').classList.add('active');
+            const list = document.getElementById('veh-list');
             list.innerHTML = '';
-            api.forEach(i => {
-                const d = document.createElement('div');
-                d.className = 'res-item';
-                d.innerHTML = `<i class="fa-solid fa-location-dot" style="color:#888;"></i><div><div style="font-weight:600;font-size:14px;">${i.display_name.split(',')[0]}</div><div style="font-size:11px;color:#999;">${i.display_name}</div></div>`;
-                d.onclick = () => {
-                    setAddress(i.display_name.split(',')[0], {lat:parseFloat(i.lat), lng:parseFloat(i.lon)});
-                    closeSearch();
-                };
-                list.appendChild(d);
-            });
-        }
-
-        // Map Select
-        window.openMapSelectMode = () => {
-            document.getElementById('map-select-mode').style.display = 'block';
-            selectMap.invalidateSize();
-            const t = currentSearchType === 'pickup' && pickupCoords ? pickupCoords : (dropoffCoords || {lat:6.9271, lng:79.8612});
-            selectMap.setView(t, 16);
-        };
-        window.closeMapSelectMode = () => document.getElementById('map-select-mode').style.display = 'none';
-        
-        window.confirmMapSelection = async () => {
-            const c = selectMap.getCenter();
-            closeMapSelectMode(); closeSearch();
-            let name = "Pin Location";
-            try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${c.lat}&lon=${c.lng}&format=json`);
-                name = (await res.json()).display_name.split(',')[0];
-            } catch(e) {}
-            setAddress(name, {lat: c.lat, lng: c.lng});
-        };
-
-        // Routing
-        window.calculateRoute = async () => {
-            if(!pickupCoords || !dropoffCoords) return showToast("Set Pickup & Dropoff");
-            document.getElementById('map-route-screen').style.display = 'block';
-            setTimeout(() => map.invalidateSize(), 200);
-
-            try {
-                const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${pickupCoords.lng},${pickupCoords.lat};${dropoffCoords.lng},${dropoffCoords.lat}?overview=full&geometries=geojson`);
-                const data = await res.json();
-                if(data.routes && data.routes.length) {
-                    const r = data.routes[0];
-                    currentRouteDistKm = r.distance / 1000;
+            
+            // Calculate prices based on nearby available drivers
+            const types = ['Bike', 'Tuk', 'Car', 'Van'];
+            types.forEach(type => {
+                // Find drivers of this type
+                const drivers = availableDrivers.filter(d => d.key === type);
+                if(drivers.length > 0) {
+                    // Average price
+                    const avgRate = drivers.reduce((acc, d) => acc + parseFloat(d.data.price_per_100m || 10), 0) / drivers.length;
+                    const price = Math.ceil(100 + (dist * 10 * avgRate)); // Base 100 + logic
                     
-                    if(routeLine) map.removeLayer(routeLine);
-                    const latlngs = r.geometry.coordinates.map(c => [c[1], c[0]]);
-                    
-                    // FIX: ADDED className 'route-path-anim'
-                    routeLine = L.polyline(latlngs, {
-                        color: '#E31C25', 
-                        weight: 5,
-                        className: 'route-path-anim' // <--- ANIMATION CLASS ADDED HERE
-                    }).addTo(map);
-                    
-                    map.fitBounds(routeLine.getBounds(), {padding:[50,150]});
-
-                    if(pickupMarker) map.removeLayer(pickupMarker);
-                    if(dropoffMarker) map.removeLayer(dropoffMarker);
-                    
-                    pickupMarker = L.marker(pickupCoords, {icon: createPin('A', 'pin-pickup')}).addTo(map);
-                    dropoffMarker = L.marker(dropoffCoords, {icon: createPin('B', 'pin-drop')}).addTo(map);
-
-                    document.getElementById('route-stats').innerText = `${currentRouteDistKm.toFixed(1)} km • ${(r.duration/60).toFixed(0)} min`;
-                    
-                    // Show Card with Animation
-                    setTimeout(() => {
-                        document.getElementById('route-card').classList.add('show');
-                    }, 500);
-
-                    filterDrivers();
+                    const div = document.createElement('div');
+                    div.className = `veh-item ${selectedVehicle === type ? 'selected' : ''}`;
+                    div.innerHTML = `<span><b>${type}</b> <small>${drivers.length} nearby</small></span> <b>${price} LKR</b>`;
+                    div.onclick = () => {
+                        selectedVehicle = type;
+                        showVehicleSelect(dist);
+                    };
+                    list.appendChild(div);
                 }
-            } catch(e) { showToast("Routing Error"); }
-        };
-
-        function createPin(label, cls) {
-            return L.divIcon({ className: `custom-pin ${cls}`, html: label, iconSize:[30,30] });
+            });
+            if(list.innerHTML === '') list.innerHTML = '<p>No drivers nearby</p>';
         }
-        window.closeMapScreen = () => {
-            document.getElementById('map-route-screen').style.display = 'none';
-            document.getElementById('route-card').classList.remove('show');
-        };
 
-        // Drivers Realtime
-        function setupRealtimeDrivers() {
-            onValue(ref(db, 'active_gigs'), (snap) => {
-                allActiveGigs = snap.val() || {};
-                filterDrivers();
+        function fetchNearbyDrivers() {
+            db.ref('active_gigs').on('value', snap => {
+                availableDrivers = [];
+                if(snap.exists()) {
+                    snap.forEach(typeSnap => {
+                        typeSnap.forEach(dSnap => {
+                            const d = dSnap.val();
+                            if(d.availability) {
+                                availableDrivers.push({key: typeSnap.key, id: dSnap.key, data: d});
+                            }
+                        });
+                    });
+                }
             });
         }
 
-        function filterDrivers() {
-            const center = pickupCoords || (map ? map.getCenter() : {lat:6.9271, lng:79.8612});
-            activeDriverData = {};
+        // --- BOOKING LOGIC ---
+
+        function requestRide() {
+            // Filter drivers by type
+            let candidates = availableDrivers.filter(d => d.key === selectedVehicle && !rejectedDrivers.includes(d.id));
             
-            Object.keys(allActiveGigs).forEach(vt => {
-                const drivers = allActiveGigs[vt];
-                Object.keys(drivers).forEach(did => {
-                    const d = drivers[did];
-                    const dist = getDist(center, d.location);
-                    if(dist <= 20) {
-                        if(!activeDriverData[vt]) activeDriverData[vt] = [];
-                        activeDriverData[vt].push({...d, dist});
-                    }
-                });
-            });
+            if(candidates.length === 0) {
+                document.getElementById('panel-searching').classList.remove('active');
+                document.getElementById('panel-select').classList.add('active');
+                alert("No drivers found or all declined. Try another vehicle type.");
+                rejectedDrivers = []; // Reset for retry
+                return;
+            }
 
-            updateMapMarkers();
-            updateVehList();
-        }
+            // Sort by price (cheapest first)
+            candidates.sort((a,b) => parseFloat(a.data.price_per_100m) - parseFloat(b.data.price_per_100m));
+            const targetDriver = candidates[0];
 
-        function updateMapMarkers() {
-            const drivers = activeDriverData[selectedVehicle] || [];
-            const activeIds = drivers.map(d => d.driver_id);
+            document.getElementById('panel-select').classList.remove('active');
+            document.getElementById('panel-searching').classList.add('active');
 
-            Object.keys(driverMarkers).forEach(id => {
-                if(!activeIds.includes(id)) { map.removeLayer(driverMarkers[id]); delete driverMarkers[id]; }
-            });
+            if(!currentRequestId) {
+                // Create New Request
+                currentRequestId = db.ref('ride_requests').push().key;
+            }
 
-            drivers.forEach(d => {
-                if(driverMarkers[d.driver_id]) driverMarkers[d.driver_id].setLatLng(d.location);
-                else driverMarkers[d.driver_id] = L.marker(d.location, {icon: L.divIcon({className: 'veh-rect-marker'})}).addTo(map);
-            });
-        }
+            const reqData = {
+                id: currentRequestId,
+                user_id: userId,
+                driver_id: targetDriver.id, // THE CHOSEN ONE
+                status: 'pending',
+                pickup: pickupCoords,
+                dropoff: dropoffCoords,
+                vehicle: selectedVehicle,
+                timestamp: Date.now(),
+                rejected_drivers: rejectedDrivers,
+                waiting_time: 0
+            };
 
-        function updateVehList() {
-            const list = document.getElementById('vehicle-list');
-            list.innerHTML = '';
-            vehicles.forEach(v => {
-                const count = (activeDriverData[v.id] || []).length;
-                const d = document.createElement('div');
-                d.className = `veh-item ${selectedVehicle === v.id ? 'selected' : ''}`;
-                d.innerHTML = `<i class="fa-solid ${v.icon}" style="font-size:20px; color:${selectedVehicle===v.id ? '#E31C25':'#555'}"></i><span style="font-size:12px; font-weight:600;">${v.name}</span><span style="font-size:10px; color:#999;">${count} Nearby</span>`;
-                d.onclick = () => { selectedVehicle = v.id; updateVehList(); updateMapMarkers(); };
-                list.appendChild(d);
-            });
-        }
-
-        // Driver List & Book
-        window.showNearbyDrivers = () => {
-            document.getElementById('driver-select-screen').classList.add('active');
-            const list = document.getElementById('driver-list-container');
-            const drivers = activeDriverData[selectedVehicle] || [];
-            if(!drivers.length) { list.innerHTML = "<p style='text-align:center;color:#999;margin-top:50px;'>No drivers nearby</p>"; return; }
-
-            const vConf = vehicles.find(v => v.id === selectedVehicle);
-            const price = Math.ceil(vConf.base + (currentRouteDistKm * 10 * vConf.per100m));
+            db.ref('ride_requests/' + currentRequestId).set(reqData);
             
-            list.innerHTML = drivers.map(d => `
-                <div class="driver-card-fancy">
-                    <div class="dc-top">
-                        <div style="display:flex; flex-direction:column; align-items:center;">
-                            <img src="${d.profile_pic}" class="dc-profile">
-                            <div class="dc-car-icon"><i class="fa-solid ${vConf.icon}"></i></div>
-                        </div>
-                        <div class="dc-info">
-                            <div class="dc-name">${d.driver_name}</div>
-                            <div style="font-size:11px; color:#666;">${d.vehicle_plate} • ${d.dist.toFixed(1)} km away</div>
-                            <div class="dc-price">LKR ${price.toLocaleString()}</div>
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" style="padding:10px; font-size:13px;" onclick="bookRide('${d.driver_id}', ${price})">Request</button>
-                </div>
-            `).join('');
-        };
-        window.closeDriverScreen = () => document.getElementById('driver-select-screen').classList.remove('active');
-
-        window.bookRide = (dId, price) => {
-            const reqId = Date.now().toString();
-            set(ref(db, 'ride_requests/' + reqId), {
-                user_id: userId, driver_id: dId, pickup: pickupCoords, dropoff: dropoffCoords,
-                vehicle: selectedVehicle, estimated_price: price, status: 'pending', timestamp: Date.now()
-            }).then(() => { showToast("Request Sent!"); closeDriverScreen(); });
-        };
-
-        // Maths
-        function getDist(c1, c2) {
-            const R = 6371, dLat = (c2.lat-c1.lat)*Math.PI/180, dLon = (c2.lng-c1.lng)*Math.PI/180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(c1.lat*Math.PI/180)*Math.cos(c2.lat*Math.PI/180) * Math.sin(dLon/2)**2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            // Listen for changes
+            if(rideListener) db.ref('ride_requests/' + currentRequestId).off();
+            rideListener = db.ref('ride_requests/' + currentRequestId).on('value', handleRideUpdate);
         }
 
-        window.bookRide = window.bookRide; 
+        function handleRideUpdate(snap) {
+            if(!snap.exists()) return;
+            const ride = snap.val();
+
+            // 1. Check if Driver Declined
+            if(ride.status === 'pending' && ride.driver_id !== ride.driver_id_prev) {
+                // Wait... if driver declines, the driver app updates 'rejected_drivers' ? 
+                // Actually, let's make the USER app intelligent.
+                // The driver app will just set status back to 'declined' or similar?
+                // Standard Logic: Driver App sets rejected_drivers in DB. User App sees it.
+            }
+            
+            // Logic: If driver declined (status stays pending but rejected_drivers grew) OR explicit 'declined' status
+            if(ride.rejected_drivers && ride.rejected_drivers.length > rejectedDrivers.length) {
+                console.log("Driver declined, finding next...");
+                rejectedDrivers = ride.rejected_drivers;
+                requestRide(); // Recursively find next
+                return;
+            }
+
+            // 2. Accepted
+            if(ride.status === 'accepted' || ride.status === 'arrived' || ride.status === 'in_progress') {
+                document.getElementById('panel-searching').classList.remove('active');
+                document.getElementById('panel-ride').classList.add('active');
+                updateRideUI(ride);
+                trackDriver(ride.driver_id);
+            }
+
+            // 3. Status Updates
+            const statusBadge = document.getElementById('ride-status');
+            if(ride.status === 'arrived') { statusBadge.innerText = "DRIVER ARRIVED"; statusBadge.style.background = "orange"; }
+            if(ride.status === 'in_progress') { statusBadge.innerText = "ON TRIP"; statusBadge.style.background = "#E31C25"; statusBadge.style.color = "white"; }
+            
+            // 4. Completed
+            if(ride.status === 'completed') {
+                document.getElementById('panel-ride').classList.remove('active');
+                document.getElementById('panel-rating').classList.add('active');
+                document.getElementById('final-bill').innerText = Math.ceil(ride.final_price) + " LKR";
+                if(driverMarker) map.removeLayer(driverMarker);
+                routeLine.remove();
+                
+                // Save to activities
+                db.ref('activities/' + userId + '/' + ride.id).set(ride);
+            }
+
+            // Chat Sync
+            if(ride.chat) renderChat(ride.chat);
+        }
+
+        function updateRideUI(ride) {
+            // Get driver details from active_gigs (fast) or drivers node
+            db.ref('drivers/' + ride.driver_id).once('value', s => {
+                const d = s.val();
+                document.getElementById('d-name').innerText = d.name;
+                document.getElementById('d-veh').innerText = ride.vehicle;
+                document.getElementById('d-plate').innerText = d.vehiclePlate;
+                document.getElementById('d-pic').src = d.profile_pic || 'https://via.placeholder.com/50';
+                document.getElementById('d-call').href = `tel:${d.mobile}`;
+            });
+        }
+
+        function trackDriver(dId) {
+            db.ref(`active_gigs/${selectedVehicle}/${dId}/location`).on('value', s => {
+                const loc = s.val();
+                if(!loc) return;
+                
+                if(driverMarker) driverMarker.setLatLng(loc);
+                else {
+                    driverMarker = L.marker(loc, {
+                        icon: L.divIcon({
+                            className: 'car-icon',
+                            html: '<i class="fa-solid fa-car-side" style="color:red; font-size:24px; background:white; border-radius:50%; padding:5px; border:2px solid red;"></i>'
+                        })
+                    }).addTo(map);
+                }
+            });
+        }
+
+        function cancelRequest() {
+            if(currentRequestId) {
+                db.ref('ride_requests/' + currentRequestId).remove();
+                currentRequestId = null;
+            }
+            document.getElementById('panel-searching').classList.remove('active');
+            document.getElementById('panel-select').classList.add('active');
+            rejectedDrivers = [];
+        }
+
+        // --- CHAT & RATING ---
+        function sendMsg() {
+            const txt = document.getElementById('chat-input').value;
+            if(!txt) return;
+            const msg = { sender: 'user', text: txt, time: Date.now() };
+            
+            // Add to array
+            db.ref(`ride_requests/${currentRequestId}/chat`).push(msg);
+            document.getElementById('chat-input').value = '';
+        }
+
+        function renderChat(chatObj) {
+            const div = document.getElementById('chat-feed');
+            div.innerHTML = '';
+            Object.values(chatObj).forEach(m => {
+                const p = document.createElement('div');
+                p.className = `chat-msg ${m.sender === 'user' ? 'me' : 'them'}`;
+                p.innerText = m.text;
+                div.appendChild(p);
+            });
+            div.scrollTop = div.scrollHeight;
+        }
+
+        function rate(stars) {
+            // Visual only for now
+            alert(`Rated ${stars} stars`);
+        }
+        function submitRating() {
+            location.reload(); // Reset App
+        }
+
     </script>
 </body>
 </html>
