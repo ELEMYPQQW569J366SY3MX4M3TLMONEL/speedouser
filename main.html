@@ -28,6 +28,7 @@
 
         /* MAP */
         #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+        .leaflet-control-attribution { display: none !important; } /* Hide Leaflet Label */
         
         /* UI LAYERS */
         .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; pointer-events: none; display: flex; flex-direction: column; }
@@ -46,6 +47,11 @@
         .sq { width: 8px; height: 8px; background: var(--primary); }
         .loc-text { font-size: 0.9rem; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
         .confirm-btn { background: var(--dark); color: white; width: 100%; padding: 15px; border-radius: 15px; border: none; font-weight: 600; cursor: pointer; display: none; }
+
+        /* Center Pin */
+        .center-pin { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 500; font-size: 3rem; color: var(--dark); display: none; pointer-events: none; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+        .center-pin.active { display: block; animation: bounce 0.4s ease infinite alternate; }
+        @keyframes bounce { from { transform: translate(-50%, -100%); } to { transform: translate(-50%, -110%); } }
 
         /* Bottom Sheets */
         .bottom-sheet {
@@ -85,7 +91,7 @@
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; align-items: center; justify-content: center; }
         .modal-box { background: white; width: 85%; padding: 25px; border-radius: 20px; text-align: center; }
         
-        .stars { font-size: 2.5rem; color: #ddd; margin: 20px 0; display: flex; justify-content: center; gap: 5px; }
+        .stars { font-size: 2.5rem; color: #ddd; margin: 20px 0; display: flex; justify-content: center; gap: 5px; cursor: pointer; }
         .stars i.active { color: #FFC107; }
 
         /* Menu Sidebar */
@@ -104,7 +110,7 @@
 
     <!-- Map -->
     <div id="map"></div>
-    <div class="center-pin interactive" id="map-pin" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 500; font-size: 3rem; color: var(--dark); display: none; pointer-events: none;"><i class="fa-solid fa-location-dot"></i></div>
+    <div class="center-pin interactive" id="map-pin"><i class="fa-solid fa-location-dot"></i></div>
 
     <!-- UI -->
     <div class="ui-layer">
@@ -173,9 +179,6 @@
                 <small id="menu-phone" style="color: #666;">Phone</small>
             </div>
         </div>
-        <div class="menu-item"><i class="fa-solid fa-clock-rotate-left"></i> History</div>
-        <div class="menu-item"><i class="fa-solid fa-tag"></i> Promotions</div>
-        <div class="menu-item"><i class="fa-solid fa-circle-question"></i> Help</div>
         <div class="menu-item" style="color: var(--primary); margin-top: auto;" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</div>
     </div>
 
@@ -209,14 +212,14 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // --- GLOBAL VARIABLES ---
+        // State
         const userId = localStorage.getItem('speedo_user_id');
         let map, routeControl;
         let pickMode = null, locPickup = null, locDrop = null, tripDist = 0;
         let nearbyDrivers = [], attemptedDrivers = [];
         let selectedVehType = null;
         let currentDriverId = null, currentRideId = null;
-        let driverListener = null; // To stop listening to driver status
+        let driverUnsubscribe = null; // Store function to unsubscribe
         let ratingVal = 0;
 
         const vehicles = [
@@ -249,7 +252,7 @@
 
         // --- MAP ---
         function initMap() {
-            map = L.map('map', { zoomControl: false }).setView([6.9271, 79.8612], 13);
+            map = L.map('map', { zoomControl: false, attributionControl: false }).setView([6.9271, 79.8612], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
             if(navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
@@ -302,8 +305,13 @@
                 waypoints: [L.latLng(locPickup), L.latLng(locDrop)],
                 router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
                 lineOptions: { styles: [{ color: '#1a1a1a', weight: 5 }] },
-                createMarker: ()=>null, addWaypoints: false, fitSelectedRoutes: true
+                createMarker: ()=>null, addWaypoints: false, fitSelectedRoutes: true, showAlternatives: false, containerClassName: 'hidden-instructions' 
             }).addTo(map);
+            
+            // Hide the default routing box using CSS logic
+            const container = document.querySelector('.leaflet-routing-container');
+            if(container) container.style.display = 'none';
+
             routeControl.on('routesfound', e => {
                 tripDist = e.routes[0].summary.totalDistance / 1000;
                 renderVehicles();
@@ -341,16 +349,12 @@
             if(snap.exists()) {
                 snap.forEach(c => {
                     const d = c.val();
-                    // CHECK: searching OR idle AND location exists
-                    if(d.location && (d.active_session === 'searching' || d.availability === true || d.availability === 'idle')) {
+                    if(d.location && (d.active_session==='searching' || d.availability===true || d.availability==='idle')) {
                         const dist = map.distance(locPickup, d.location) / 1000;
                         if(dist <= 15) {
-                            // Calc Stats
                             const total = (d.accepts||0) + (d.declines||0);
                             const acc = total ? Math.round((d.accepts/total)*100) : 100;
                             const dec = total ? Math.round((d.declines/total)*100) : 0;
-                            
-                            // Calc Price (Driver specific rate or default)
                             const dRate = d.price_per_100m ? (parseFloat(d.price_per_100m)*10) : rate;
                             let price = base;
                             if(tripDist > 1) price += (tripDist-1)*dRate;
@@ -361,7 +365,6 @@
                 });
             }
 
-            // Sort: Price ASC
             nearbyDrivers.sort((a,b) => a.price - b.price);
             renderDriverList();
         }
@@ -400,7 +403,6 @@
         };
 
         async function initiateRequest(did, price) {
-            // Find driver details locally
             const driverInfo = nearbyDrivers.find(d => d.driver_id === did);
             if(!driverInfo) return showToast("Driver Error");
 
@@ -414,61 +416,44 @@
             document.getElementById('td-rating').innerText = driverInfo.rating || "5.0";
             document.getElementById('td-call').href = `tel:${driverInfo.mobile}`;
 
-            // Create Ride Request
+            // Create Request
             const newRef = push(ref(db, 'ride_requests'));
             currentRideId = newRef.key;
             
-            const payload = {
-                ride_id: currentRideId,
-                user_id: userId,
-                driver_id: did,
-                pickup: locPickup,
-                dropoff: locDrop,
-                vehicle: selectedVehType,
-                estimated_price: price,
-                status: 'pending',
-                timestamp: Date.now()
-            };
-
-            await set(newRef, payload);
+            await set(newRef, {
+                ride_id: currentRideId, user_id: userId, driver_id: did, pickup: locPickup, dropoff: locDrop,
+                vehicle: selectedVehType, estimated_price: price, status: 'pending', timestamp: Date.now()
+            });
             
-            // Trigger Driver (Update Active Gig)
-            // IMPORTANT: This triggers the "New Hire" modal on driver side
+            // Trigger Driver
             await update(ref(db, `active_gigs/${selectedVehType}/${did}`), { active_session: 'ride', availability: 'idle' });
 
-            // Start Listening to THIS DRIVER'S status
             monitorDriverStatus(did);
         }
 
         function monitorDriverStatus(did) {
-            // We listen to the driver's ACTIVE GIG node
             const driverRef = ref(db, `active_gigs/${selectedVehType}/${did}`);
             
-            driverListener = onValue(driverRef, (snap) => {
+            // CLEAN UNSUBSCRIBE: Use return value
+            driverUnsubscribe = onValue(driverRef, (snap) => {
                 const d = snap.val();
-                
-                // If driver node deleted or missing
                 if(!d) { fallback(); return; }
 
-                // 1. ACCEPTED
                 if(d.active_session === 'confirmed' || d.active_session === 'accepted' || d.active_session === 'arrived' || d.active_session === 'started') {
                     if(d.active_session === 'arrived') updateStatus("Driver Arrived", "#fff3cd", "#856404");
                     else if(d.active_session === 'started') updateStatus("Trip Started", "#d4edda", "#155724");
                     else updateStatus("Driver Coming", "#d1ecf1", "#0c5460");
                 }
-                
-                // 2. DECLINED (Driver set session back to 'searching' while we are 'pending')
-                // Note: Driver app logic: Cancel/Decline -> Sets active_session: 'searching', availability: true
+                // AUTO FALLBACK
                 else if(d.active_session === 'searching' && d.availability === true) {
-                    // Check if ride was actually completed?
-                    // We assume if status resets quickly it is a decline
-                    showToast("Driver Declined/Cancelled. Finding next...", "error");
-                    driverRef.off(); // Stop listening
+                    showToast("Driver Declined. Finding next...", "error");
+                    // Unsubscribe immediately
+                    if(driverUnsubscribe) { driverUnsubscribe(); driverUnsubscribe = null; }
                     fallback(); 
                 }
             });
             
-            // Also Listen to Ride Request node for explicit 'ended' status
+            // Listen for Pay
             onValue(ref(db, `ride_requests/${currentRideId}`), (snap) => {
                 const r = snap.val();
                 if(r && r.status === 'paid') endTrip();
@@ -481,19 +466,15 @@
         }
 
         function fallback() {
-            // Remove old request
             if(currentRideId) remove(ref(db, `ride_requests/${currentRideId}`));
             
-            // Find next cheapest driver not attempted
             const nextDriver = nearbyDrivers.find(d => !attemptedDrivers.includes(d.driver_id));
-            
             if(nextDriver) {
                 attemptedDrivers.push(nextDriver.driver_id);
                 initiateRequest(nextDriver.driver_id, nextDriver.price);
             } else {
-                // Retry first one if no others
-                showToast("All drivers busy. Retrying first...", "warning");
-                attemptedDrivers = []; // Reset loop
+                showToast("Retrying first driver...", "warning");
+                attemptedDrivers = [];
                 const first = nearbyDrivers[0];
                 if(first) {
                     attemptedDrivers.push(first.driver_id);
@@ -506,9 +487,8 @@
         }
 
         window.cancelRide = () => {
-            if(driverListener) driverListener(); // Stop listening
+            if(driverUnsubscribe) { driverUnsubscribe(); driverUnsubscribe = null; }
             if(currentRideId) remove(ref(db, `ride_requests/${currentRideId}`));
-            // Reset driver if we cancel
             if(currentDriverId) update(ref(db, `active_gigs/${selectedVehType}/${currentDriverId}`), { active_session: 'searching', availability: true });
             
             document.getElementById('sheet-trip').classList.remove('active');
@@ -526,37 +506,25 @@
 
         window.submitRating = async () => {
             if(!ratingVal) return showToast("Please rate");
-            
-            // Update Rating
             const dRef = ref(db, `drivers/${currentDriverId}`);
             const snap = await get(dRef);
             if(snap.exists()) {
                 const d = snap.val();
                 let r = parseFloat(d.rating || 0.00);
                 if(r===0) r=5.00;
-
-                if(ratingVal === 5) r += 0.05;
-                else if(ratingVal < 3) r -= 0.02;
-                
-                if(r > 5) r = 5.00;
-                if(r < 0) r = 0.00;
-
+                if(ratingVal === 5) r += 0.05; else if(ratingVal < 3) r -= 0.02;
+                if(r > 5) r = 5.00; if(r < 0) r = 0.00;
                 await update(dRef, { rating: r.toFixed(2) });
             }
-            
             document.getElementById('rating-modal').style.display='none';
-            cancelRide(); // Reset UI
+            cancelRide();
             showToast("Thank you!");
         };
 
-        // --- EXTRAS ---
-        window.toggleMenu = () => {
-            document.getElementById('side-menu').classList.toggle('active');
-            document.getElementById('menu-overlay').classList.toggle('active');
-        };
+        window.toggleMenu = () => { document.getElementById('side-menu').classList.toggle('active'); document.getElementById('menu-overlay').classList.toggle('active'); };
         window.logout = () => { localStorage.clear(); window.location.href='index.html'; };
         function showToast(m, t) { const x=document.getElementById('toast'); x.innerText=m; x.style.background=t==='error'?'#d63031':'#333'; x.classList.add('show'); setTimeout(()=>x.classList.remove('show'),3000); }
-        window.bookDriver = window.bookDriver; // Expose to HTML
+        window.bookDriver = window.bookDriver;
     </script>
 </body>
 </html>
