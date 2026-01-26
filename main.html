@@ -3,171 +3,280 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SPEEDO App</title>
+    <title>SPEEDO - Request a Ride</title>
+
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Leaflet & Routing -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <style>
-        :root { --primary: #E31C25; --text: #333; --bg-gray: #f2f4f6; --white: #ffffff; --nav-height: 70px; }
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; outline: none; }
-        body { font-family: 'Poppins', sans-serif; background: var(--bg-gray); height: 100vh; width: 100vw; overflow: hidden; display: flex; flex-direction: column; }
-        
-        .hidden { display: none !important; }
-        .full-screen { position: fixed; inset: 0; background: white; z-index: 2000; display: flex; flex-direction: column; }
-        .btn { width: 100%; padding: 14px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer; background: var(--primary); color: white; }
-        
-        /* HEADER & MENU */
-        .app-header-bg { position: fixed; top: 0; left: 0; width: 100%; height: 25vh; background: var(--primary); z-index: 1; padding: 20px; color: white; display: flex; justify-content: space-between; padding-top: 40px; }
-        .user-info { display: flex; align-items: center; gap: 12px; }
-        .profile-img-main { width: 50px; height: 50px; border-radius: 50%; border: 2px solid white; object-fit: cover; background: #ddd; }
-        
-        /* MAIN SHEET */
-        .main-sheet { position: fixed; top: 140px; left: 0; width: 100%; bottom: var(--nav-height); background: var(--bg-gray); border-radius: 30px 30px 0 0; z-index: 10; overflow-y: auto; padding: 25px 20px 80px 20px; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); }
-        .search-widget { background: #e6e6e6; padding: 15px 20px; border-radius: 30px; display: flex; gap: 15px; margin-bottom: 25px; align-items: center; }
-        .services-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-        .service-btn { background: #e0e0e0; aspect-ratio: 1; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
-        
-        /* BOTTOM NAV */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: var(--nav-height); background: white; z-index: 100; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #999; font-size: 10px; cursor: pointer; }
-        .nav-item.active { color: var(--primary); }
+        :root {
+            --primary: #E31C25; /* Speedo Red */
+            --primary-dark: #b71c1c;
+            --text: #1a1a1a;
+            --gray: #f5f5f5;
+            --white: #ffffff;
+            --shadow: 0 10px 30px rgba(0,0,0,0.15);
+            --radius: 24px;
+        }
 
-        /* RIDE SCREENS */
-        #ride-form-screen, #map-route-screen { z-index: 2100; transform: translateY(100%); transition: transform 0.3s; background: white; }
-        #ride-form-screen.active, #map-route-screen.active { transform: translateY(0); }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; font-family: 'Poppins', sans-serif; }
         
-        /* VEHICLE LIST CARD */
-        .route-card { position: absolute; bottom: 0; left: 0; width: 100%; background: white; border-radius: 25px 25px 0 0; padding: 20px; transform: translateY(100%); transition: 0.4s; z-index: 2200; box-shadow: 0 -5px 25px rgba(0,0,0,0.1); }
-        .route-card.show { transform: translateY(0); }
-        .veh-list { display: flex; gap: 15px; overflow-x: auto; padding: 10px 0; }
-        .veh-item { min-width: 80px; padding: 10px; border: 1px solid #eee; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .veh-item.selected { background: #fff0f0; border-color: var(--primary); }
+        body {
+            height: 100vh; width: 100vw; overflow: hidden; background: var(--gray);
+            display: flex; flex-direction: column;
+        }
 
-        /* SEARCHING PULSE */
-        #searching-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 3000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .pulse-ring { width: 80px; height: 80px; border-radius: 50%; background: var(--primary); animation: pulse 1.5s infinite; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; color: white; font-size: 30px; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(227, 28, 37, 0.7); } 70% { box-shadow: 0 0 0 30px rgba(227, 28, 37, 0); } 100% { box-shadow: 0 0 0 0 rgba(227, 28, 37, 0); } }
+        /* --- MAP --- */
+        #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+        
+        /* Center Pin for Selection */
+        .center-pin {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%);
+            z-index: 500; font-size: 3rem; color: var(--text); pointer-events: none;
+            display: none; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3));
+        }
+        .center-pin.active { display: block; animation: bounce 0.5s ease; }
+        @keyframes bounce { 0% {transform: translate(-50%, -100%);} 50% {transform: translate(-50%, -120%);} 100% {transform: translate(-50%, -100%);} }
 
-        /* ACTIVE RIDE PANEL (CHAT & STATUS) */
-        #active-ride-panel { position: fixed; bottom: 0; left: 0; width: 100%; background: white; z-index: 2500; border-radius: 25px 25px 0 0; padding: 20px; transform: translateY(110%); transition: 0.3s; box-shadow: 0 -5px 30px rgba(0,0,0,0.2); }
-        #active-ride-panel.active { transform: translateY(0); }
-        .driver-strip { display: flex; gap: 15px; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
-        .d-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
-        .chat-box { height: 150px; background: #f9f9f9; border-radius: 10px; padding: 10px; overflow-y: auto; margin-bottom: 10px; }
-        .chat-msg { font-size: 12px; padding: 6px 10px; border-radius: 10px; margin-bottom: 5px; max-width: 80%; width: fit-content; }
-        .chat-msg.me { background: #ffebeb; margin-left: auto; color: var(--primary); }
-        .chat-msg.them { background: white; border: 1px solid #eee; }
+        /* --- UI OVERLAY --- */
+        .ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1000; pointer-events: none;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .interactive { pointer-events: auto; }
 
-        /* RATING */
-        #rating-screen { position: fixed; inset: 0; background: white; z-index: 4000; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        .star-row { font-size: 30px; color: gold; margin: 20px 0; display: flex; gap: 10px; }
+        /* Header */
+        .header {
+            padding: 20px; display: flex; justify-content: space-between; align-items: flex-start;
+        }
+        .menu-btn {
+            background: var(--white); width: 45px; height: 45px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: var(--shadow); cursor: pointer; font-size: 1.2rem; color: var(--text);
+        }
+        .user-pill {
+            background: var(--white); padding: 8px 16px; border-radius: 30px;
+            font-weight: 600; font-size: 0.9rem; box-shadow: var(--shadow);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .user-pill img { width: 24px; height: 24px; border-radius: 50%; background: #eee; }
+
+        /* --- SEARCH CARD (Top Floating) --- */
+        .search-card {
+            background: var(--white); margin: 20px; padding: 20px; border-radius: var(--radius);
+            box-shadow: var(--shadow); pointer-events: auto; transition: 0.3s;
+        }
+        .search-input {
+            background: var(--gray); padding: 15px; border-radius: 15px;
+            display: flex; align-items: center; gap: 15px; cursor: pointer;
+        }
+        .dot { width: 10px; height: 10px; background: var(--text); border-radius: 50%; }
+        .sq { width: 10px; height: 10px; background: var(--primary); }
+        .search-text { flex: 1; font-weight: 500; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .confirm-loc-btn {
+            background: var(--text); color: var(--white); width: 100%; padding: 15px;
+            border-radius: 15px; font-weight: 600; margin-top: 15px; border: none; cursor: pointer;
+            display: none; /* Hidden until picking */
+        }
+
+        /* --- BOTTOM SHEETS --- */
+        .bottom-sheet {
+            background: var(--white); border-top-left-radius: 30px; border-top-right-radius: 30px;
+            padding: 25px; box-shadow: 0 -5px 30px rgba(0,0,0,0.1);
+            transform: translateY(110%); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: absolute; bottom: 0; left: 0; width: 100%; max-height: 80vh; overflow-y: auto;
+        }
+        .bottom-sheet.active { transform: translateY(0); }
+
+        /* Vehicle Selection */
+        .sheet-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 5px; color: var(--text); }
+        .sheet-sub { font-size: 0.85rem; color: #888; margin-bottom: 20px; }
+        
+        .veh-list { display: flex; flex-direction: column; gap: 12px; }
+        .veh-item {
+            display: flex; align-items: center; padding: 15px; border: 2px solid var(--gray);
+            border-radius: 16px; transition: 0.2s; cursor: pointer;
+        }
+        .veh-item.selected { border-color: var(--primary); background: rgba(227, 28, 37, 0.03); }
+        .veh-img { width: 60px; height: 40px; object-fit: contain; margin-right: 15px; }
+        .veh-info { flex: 1; }
+        .veh-name { font-weight: 700; font-size: 1rem; }
+        .veh-desc { font-size: 0.75rem; color: #888; }
+        .veh-price { font-weight: 700; font-size: 1.1rem; color: var(--text); }
+
+        .action-btn {
+            background: var(--primary); color: white; width: 100%; padding: 18px;
+            border-radius: 18px; border: none; font-size: 1.1rem; font-weight: 700;
+            margin-top: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px;
+        }
+        .action-btn:active { transform: scale(0.98); }
+
+        /* Driver Found / Trip UI */
+        .driver-card { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .driver-pic { width: 65px; height: 65px; border-radius: 50%; object-fit: cover; border: 3px solid var(--gray); }
+        .driver-details h3 { font-size: 1.1rem; margin-bottom: 2px; }
+        .driver-meta { font-size: 0.85rem; color: #666; display: flex; gap: 10px; align-items: center; }
+        .star-pill { background: #fff8e1; color: #fbc02d; padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; gap: 3px; }
+        .plate-box { background: var(--gray); padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; letter-spacing: 1px; }
+
+        .trip-status {
+            background: #f0fdf4; color: #166534; padding: 10px; border-radius: 12px;
+            text-align: center; font-weight: 600; margin-bottom: 15px; border: 1px solid #dcfce7;
+        }
+
+        /* Pulse Animation for Searching */
+        .pulse-ring {
+            display: inline-block; width: 80px; height: 80px; border-radius: 50%;
+            background: rgba(227, 28, 37, 0.1); position: relative; margin: 20px auto;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .pulse-ring::after {
+            content: ''; width: 100%; height: 100%; border-radius: 50%; background: var(--primary);
+            opacity: 0.3; animation: pulse 1.5s infinite; position: absolute;
+        }
+        .pulse-icon { font-size: 2rem; color: var(--primary); z-index: 2; }
+        @keyframes pulse { 0% {transform: scale(0.8); opacity: 0.5;} 100% {transform: scale(1.5); opacity: 0;} }
+
+        /* Rating Modal */
+        #rating-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2000;
+            background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center;
+        }
+        .rating-box { background: white; padding: 30px; border-radius: 24px; width: 85%; text-align: center; }
+        .stars { font-size: 2.5rem; color: #ddd; margin: 15px 0; display: flex; justify-content: center; gap: 5px; }
+        .stars i.active { color: #FFC107; }
+
+        /* Toast */
+        #toast {
+            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: #222; color: white; padding: 12px 24px; border-radius: 50px;
+            font-size: 0.9rem; z-index: 5000; transition: 0.3s; opacity: 0;
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
     </style>
 </head>
 <body>
 
-    <!-- 1. HEADER & MENU -->
-    <div class="app-header-bg">
-        <div class="user-info">
-            <img src="https://via.placeholder.com/50" class="profile-img-main" id="u-pic">
-            <div>
-                <span style="font-size: 12px; opacity: 0.9;">Welcome,</span>
-                <h2 style="font-size: 20px; line-height: 1.1;" id="u-name">User</h2>
-            </div>
-        </div>
-    </div>
+    <!-- MAP -->
+    <div id="map"></div>
+    <!-- Selection Pin -->
+    <div class="center-pin interactive" id="map-pin"><i class="fa-solid fa-location-dot" style="color: var(--primary);"></i></div>
 
-    <!-- 2. MAIN DASHBOARD -->
-    <div class="main-sheet">
-        <div class="search-widget" onclick="openRideForm()">
-            <i class="fa-solid fa-magnifying-glass"></i> <span>Where do you want to go?</span>
-        </div>
-        <div class="services-row">
-            <div class="service-btn" onclick="openRideForm()"><i class="fa-solid fa-car"></i><span>Ride</span></div>
-            <div class="service-btn"><i class="fa-solid fa-bolt"></i><span>Flash</span></div>
-            <div class="service-btn"><i class="fa-solid fa-burger"></i><span>Food</span></div>
-        </div>
-    </div>
-
-    <!-- 3. RIDE PLANNING SCREENS -->
-    <div id="ride-form-screen" class="full-screen">
-        <div style="padding:20px;">
-            <h3>Plan Ride <i class="fa-solid fa-xmark" style="float:right;" onclick="closeRideForm()"></i></h3>
-            <div style="margin-top:20px; display:flex; flex-direction:column; gap:15px;">
-                <input id="inp-pickup" placeholder="Current Location" readonly style="padding:15px; background:#f5f5f5; border:none; border-radius:10px;">
-                <input id="inp-dropoff" placeholder="Where to?" onchange="handleSearch(this.value)" style="padding:15px; border:1px solid #ddd; border-radius:10px;">
-            </div>
-            <div id="search-results" style="margin-top:10px;"></div>
-        </div>
-    </div>
-
-    <div id="map-route-screen" class="full-screen">
-        <div id="map" style="width:100%; height:100%;"></div>
-        <button onclick="closeMap()" style="position:absolute; top:20px; left:20px; z-index:1000; padding:10px; border-radius:50%; border:none;"><i class="fa-solid fa-arrow-left"></i></button>
+    <!-- UI LAYER -->
+    <div class="ui-layer">
         
-        <!-- VEHICLE SELECTION -->
-        <div class="route-card" id="veh-card">
-            <h3>Select Vehicle</h3>
-            <p style="font-size:12px; color:#666; margin-bottom:10px;" id="dist-display">Calculating...</p>
-            <div class="veh-list" id="vehicle-list"></div>
-            <div style="margin-top:15px;">
-                <button class="btn" onclick="findDriver()">Request Ride</button>
+        <!-- Top Header -->
+        <div class="header interactive">
+            <div class="menu-btn"><i class="fa-solid fa-bars"></i></div>
+            <div class="user-pill">
+                <img src="https://via.placeholder.com/50" id="user-img-top">
+                <span id="user-name-top">User</span>
             </div>
         </div>
-    </div>
 
-    <!-- 4. SEARCHING OVERLAY -->
-    <div id="searching-overlay">
-        <div class="pulse-ring"><i class="fa-solid fa-car"></i></div>
-        <h3>Connecting...</h3>
-        <p style="font-size:12px; color:#666; max-width:200px;">Finding the best driver for you. Please wait.</p>
-        <button onclick="cancelRequest()" style="margin-top:30px; background:none; border:none; color:#999; text-decoration:underline;">Cancel Request</button>
-    </div>
-
-    <!-- 5. ACTIVE RIDE PANEL -->
-    <div id="active-ride-panel">
-        <div class="driver-strip">
-            <img id="d-pic" src="" class="d-img">
-            <div style="flex:1;">
-                <div style="display:flex; justify-content:space-between;">
-                    <h4 id="d-name">Driver</h4>
-                    <span id="d-status" style="font-size:10px; background:orange; color:white; padding:2px 6px; border-radius:4px;">COMING</span>
+        <!-- Floating Search / Status Panel (Changes based on state) -->
+        <div class="search-card interactive" id="search-panel">
+            <!-- State 1: Idle / Selection -->
+            <div id="panel-idle">
+                <h3 style="margin-bottom:15px; color:var(--text);">Where are you going?</h3>
+                
+                <div class="search-input" onclick="startPicking('pickup')">
+                    <div class="dot"></div>
+                    <div class="search-text" id="txt-pickup">Current Location</div>
                 </div>
-                <div style="font-size:12px; color:#666;"><span id="d-veh">Vehicle</span> • <span id="d-plate">ABC-1234</span></div>
+                <div style="height:10px; border-left: 2px dotted #ccc; margin-left: 19px;"></div>
+                <div class="search-input" onclick="startPicking('drop')">
+                    <div class="sq"></div>
+                    <div class="search-text" id="txt-drop" style="color:var(--text); font-weight:600;">Where to?</div>
+                </div>
+
+                <button class="confirm-loc-btn" id="btn-confirm-loc" onclick="confirmLocation()">Set Location</button>
             </div>
-            <a id="d-call" href="#" style="background:#4CAF50; color:white; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-phone"></i></a>
         </div>
-        
-        <div class="chat-box" id="chat-feed"></div>
-        <div style="display:flex; gap:10px;">
-            <input type="text" id="chat-msg" placeholder="Message..." style="flex:1; padding:10px; border:1px solid #ddd; border-radius:20px;">
-            <button onclick="sendChat()" style="width:40px; height:40px; background:var(--primary); color:white; border:none; border-radius:50%;"><i class="fa-solid fa-paper-plane"></i></button>
+
+        <!-- Bottom Sheet: Vehicle Selection -->
+        <div id="sheet-vehicles" class="bottom-sheet interactive">
+            <div class="sheet-title">Choose your ride</div>
+            <div class="sheet-sub">Distance: <span id="trip-dist">0 km</span> • Cash Only</div>
+            
+            <div class="veh-list" id="veh-list-container">
+                <!-- Vehicles injected via JS -->
+            </div>
+
+            <button class="action-btn" onclick="requestRide()">
+                <span>Request Ride</span> <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+
+        <!-- Bottom Sheet: Searching -->
+        <div id="sheet-searching" class="bottom-sheet interactive" style="text-align: center;">
+            <div class="pulse-ring"><i class="fa-solid fa-satellite-dish pulse-icon"></i></div>
+            <div class="sheet-title">Finding you a driver...</div>
+            <div class="sheet-sub">Connecting with nearby Speedo partners</div>
+            <button class="action-btn" style="background:#333;" onclick="cancelRequest()">Cancel Request</button>
+        </div>
+
+        <!-- Bottom Sheet: Active Trip -->
+        <div id="sheet-trip" class="bottom-sheet interactive">
+            <div class="trip-status" id="trip-status-text">Driver is on the way</div>
+            
+            <div class="driver-card">
+                <img src="" id="d-pic" class="driver-pic">
+                <div class="driver-details">
+                    <h3 id="d-name">Driver Name</h3>
+                    <div class="driver-meta">
+                        <span id="d-vehicle">Car</span>
+                        <div class="plate-box" id="d-plate">ABC-1234</div>
+                        <div class="star-pill"><i class="fa-solid fa-star"></i> <span id="d-rating">5.0</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <a href="#" id="d-call" class="action-btn" style="flex:1; margin:0; background:#333; color:white; text-decoration:none;">
+                    <i class="fa-solid fa-phone"></i> Call
+                </a>
+                <button class="action-btn" style="flex:1; margin:0; background:#eee; color:#333;">
+                    <i class="fa-solid fa-shield-halved"></i> Safety
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Rating Modal -->
+    <div id="rating-modal">
+        <div class="rating-box">
+            <h2>Rate Driver</h2>
+            <p style="color:#666; margin-bottom:10px;">How was your trip?</p>
+            <div class="stars" id="rating-stars">
+                <i class="fa-solid fa-star" onclick="setStar(1)"></i>
+                <i class="fa-solid fa-star" onclick="setStar(2)"></i>
+                <i class="fa-solid fa-star" onclick="setStar(3)"></i>
+                <i class="fa-solid fa-star" onclick="setStar(4)"></i>
+                <i class="fa-solid fa-star" onclick="setStar(5)"></i>
+            </div>
+            <button class="action-btn" onclick="submitRating()">Submit</button>
         </div>
     </div>
 
-    <!-- 6. RATING SCREEN -->
-    <div id="rating-screen">
-        <i class="fa-solid fa-circle-check" style="font-size:60px; color:#4CAF50; margin-bottom:20px;"></i>
-        <h2>Ride Completed</h2>
-        <h1 style="font-size:40px; margin:10px 0; color:var(--primary);" id="final-bill">0 LKR</h1>
-        <div class="star-row">
-            <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-        </div>
-        <button class="btn" style="width:80%;" onclick="location.reload()">Finish</button>
-    </div>
-
-    <!-- BOTTOM NAV -->
-    <div class="bottom-nav">
-        <div class="nav-item active"><i class="fa-solid fa-house"></i><span>Home</span></div>
-        <div class="nav-item"><i class="fa-solid fa-clock-rotate-left"></i><span>History</span></div>
-        <div class="nav-item"><i class="fa-solid fa-user"></i><span>Profile</span></div>
-    </div>
+    <div id="toast">Message</div>
 
     <script>
-        // CONFIG
+        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyAXDoV_y0FKcKz2OdbY6UT5qTpCwkokJqg",
             authDomain: "speedo-a162d.firebaseapp.com",
@@ -178,224 +287,349 @@
             appId: "1:944425759845:web:f523b6ddbda9216d3c828c"
         };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+        const database = firebase.database();
 
-        // STATE
-        const userId = localStorage.getItem('speedo_uid') || 'user_' + Date.now();
-        localStorage.setItem('speedo_uid', userId);
-        let map, routeLine, driverMarker;
-        let pickupCoords = null, dropoffCoords = null;
-        let selectedVehicle = 'Tuk';
-        let availableDrivers = [], rejectedDrivers = [];
-        let currentReqId = null;
-        
-        // VEHICLES
-        const vehicles = [
-            { id: 'Bike', icon: 'fa-motorcycle', base: 60, rate: 40 },
-            { id: 'Tuk', icon: 'fa-shuttle-van', base: 100, rate: 60 },
-            { id: 'Car', icon: 'fa-car', base: 200, rate: 120 }
-        ];
+        // --- GLOBAL STATE ---
+        // Simulating User Data (Use LocalStorage in real app)
+        const userPhone = localStorage.getItem('speedo_user_id') || '0770000000'; // Default fallback
+        const userName = "Passenger"; 
 
-        window.onload = () => {
-            document.getElementById('u-name').innerText = "User " + userId.substr(-4);
-            // Init Map hidden
+        let map, userMarker, routeControl;
+        let pickMode = null; // 'pickup' or 'drop'
+        let locPickup = null;
+        let locDrop = null;
+        let selectedVehicle = null;
+        let tripDistance = 0;
+        let activeDriverId = null;
+        let activeTripRef = null;
+        let driversOnMap = {}; // Store markers
+
+        const vehicleConfig = {
+            'Bike': { base: 60, rate: 40, img: 'https://cdn-icons-png.flaticon.com/512/3082/3082383.png' },
+            'Tuk': { base: 100, rate: 60, img: 'https://cdn-icons-png.flaticon.com/512/3082/3082390.png' },
+            'Mini': { base: 170, rate: 80, img: 'https://cdn-icons-png.flaticon.com/512/1039/1039893.png' },
+            'Car': { base: 250, rate: 120, img: 'https://cdn-icons-png.flaticon.com/512/3082/3082361.png' },
+            'Van': { base: 500, rate: 150, img: 'https://cdn-icons-png.flaticon.com/512/3082/3082343.png' }
         };
 
-        // --- UI FLOW ---
-        function openRideForm() {
-            document.getElementById('ride-form-screen').classList.add('active');
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            document.getElementById('user-name-top').innerText = userName;
+            listenForDrivers();
+        });
+
+        // --- MAP & LOCATION ---
+        function initMap() {
+            map = L.map('map', { zoomControl: false }).setView([6.9271, 79.8612], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            // Get Current Location
             if(navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
-                    pickupCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                    document.getElementById('inp-pickup').value = "Current Location";
+                    const { latitude, longitude } = pos.coords;
+                    locPickup = { lat: latitude, lng: longitude };
+                    userMarker = L.circleMarker([latitude, longitude], {
+                        radius: 8, fillColor: '#E31C25', color: '#fff', weight: 3, fillOpacity: 1
+                    }).addTo(map);
+                    map.setView([latitude, longitude], 16);
+                    reverseGeocode(latitude, longitude, 'txt-pickup');
                 });
             }
-        }
-        function closeRideForm() { document.getElementById('ride-form-screen').classList.remove('active'); }
 
-        async function handleSearch(q) {
-            // Mock Search for brevity - use Nominatim in real app
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&countrycodes=lk`);
-            const data = await res.json();
-            if(data.length) {
-                dropoffCoords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-                showMapScreen();
-            }
-        }
-
-        async function showMapScreen() {
-            document.getElementById('map-route-screen').classList.add('active');
-            document.getElementById('veh-card').classList.add('show');
-            
-            if(!map) {
-                map = L.map('map', {zoomControl:false});
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            }
-            map.invalidateSize();
-
-            // Draw Route
-            const url = `https://router.project-osrm.org/route/v1/driving/${pickupCoords.lng},${pickupCoords.lat};${dropoffCoords.lng},${dropoffCoords.lat}?overview=full&geometries=geojson`;
-            const r = await fetch(url).then(x=>x.json());
-            const route = r.routes[0];
-            const distKm = route.distance / 1000;
-            document.getElementById('dist-display').innerText = `${distKm.toFixed(1)} km • ${(route.duration/60).toFixed(0)} min`;
-
-            const latlngs = route.geometry.coordinates.map(c => [c[1], c[0]]);
-            if(routeLine) map.removeLayer(routeLine);
-            routeLine = L.polyline(latlngs, {color:'#E31C25', weight:5}).addTo(map);
-            map.fitBounds(routeLine.getBounds(), {padding:[50,50]});
-
-            // Fetch Drivers
-            fetchDrivers(distKm);
-        }
-
-        function fetchDrivers(dist) {
-            db.ref('active_gigs').on('value', snap => {
-                availableDrivers = [];
-                if(snap.exists()) {
-                    snap.forEach(t => t.forEach(d => {
-                        const val = d.val();
-                        if(val.availability) availableDrivers.push({ id: d.key, ...val });
-                    }));
+            // Map Drag/Move Listener for Pin Selection
+            map.on('moveend', () => {
+                if(pickMode) {
+                    const center = map.getCenter();
+                    const elId = pickMode === 'pickup' ? 'txt-pickup' : 'txt-drop';
+                    reverseGeocode(center.lat, center.lng, elId);
                 }
-                renderVehicles(dist);
             });
         }
 
-        function renderVehicles(dist) {
-            const list = document.getElementById('vehicle-list');
-            list.innerHTML = '';
-            vehicles.forEach(v => {
-                // Find nearest or cheapest logic here
-                const typeDrivers = availableDrivers.filter(d => d.key === v.id);
-                const count = typeDrivers.length;
-                const estPrice = Math.ceil(v.base + (dist * v.rate));
+        function startPicking(mode) {
+            pickMode = mode;
+            document.getElementById('map-pin').classList.add('active');
+            document.getElementById('search-panel').classList.add('hidden'); // Hide panel to clear view
+            document.getElementById('btn-confirm-loc').style.display = 'block'; // Show confirm button inside panel if we kept it, 
+            // Better UI: Keep panel visible but just show the "Set Location" button
+            document.getElementById('btn-confirm-loc').innerText = mode === 'pickup' ? "Set Pickup" : "Set Destination";
+            document.getElementById('btn-confirm-loc').style.display = 'block';
+        }
 
-                const d = document.createElement('div');
-                d.className = `veh-item ${selectedVehicle === v.id ? 'selected' : ''}`;
-                d.innerHTML = `<i class="fa-solid ${v.icon}" style="font-size:20px;"></i><b>${v.id}</b><span style="font-size:10px;">${count} Nearby</span><b>${estPrice}</b>`;
-                d.onclick = () => { selectedVehicle = v.id; renderVehicles(dist); };
-                list.appendChild(d);
+        function confirmLocation() {
+            const center = map.getCenter();
+            if (pickMode === 'pickup') {
+                locPickup = { lat: center.lat, lng: center.lng };
+            } else {
+                locDrop = { lat: center.lat, lng: center.lng };
+            }
+            
+            // Reset UI
+            pickMode = null;
+            document.getElementById('map-pin').classList.remove('active');
+            document.getElementById('btn-confirm-loc').style.display = 'none';
+
+            // Check if both set
+            if(locPickup && locDrop) {
+                drawRoute();
+            }
+        }
+
+        async function reverseGeocode(lat, lng, elementId) {
+            document.getElementById(elementId).innerText = "Locating...";
+            try {
+                // Using simple Nominatim (Rate limited, fine for demo)
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                const data = await res.json();
+                let address = data.display_name.split(',').slice(0,2).join(',');
+                document.getElementById(elementId).innerText = address;
+            } catch(e) {
+                document.getElementById(elementId).innerText = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            }
+        }
+
+        // --- ROUTING & VEHICLES ---
+        function drawRoute() {
+            if(routeControl) map.removeControl(routeControl);
+            
+            routeControl = L.Routing.control({
+                waypoints: [
+                    L.latLng(locPickup.lat, locPickup.lng),
+                    L.latLng(locDrop.lat, locDrop.lng)
+                ],
+                router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
+                lineOptions: { styles: [{ color: '#1a1a1a', opacity: 0.8, weight: 5 }] },
+                createMarker: () => null,
+                addWaypoints: false, draggableWaypoints: false, fitSelectedRoutes: true
+            }).addTo(map);
+
+            routeControl.on('routesfound', function(e) {
+                const summary = e.routes[0].summary;
+                tripDistance = summary.totalDistance / 1000;
+                document.getElementById('trip-dist').innerText = tripDistance.toFixed(1) + " km";
+                showVehicleSheet();
+            });
+        }
+
+        function showVehicleSheet() {
+            const list = document.getElementById('veh-list-container');
+            list.innerHTML = '';
+            
+            for(const [type, data] of Object.entries(vehicleConfig)) {
+                const price = Math.round(data.base + (tripDistance * data.rate));
+                
+                const div = document.createElement('div');
+                div.className = 'veh-item';
+                div.onclick = () => selectVehicle(div, type, price);
+                div.innerHTML = `
+                    <img src="${data.img}" class="veh-img">
+                    <div class="veh-info">
+                        <div class="veh-name">${type}</div>
+                        <div class="veh-desc">Nearby • 3 min</div>
+                    </div>
+                    <div class="veh-price">${price} LKR</div>
+                `;
+                list.appendChild(div);
+            }
+            
+            document.getElementById('sheet-vehicles').classList.add('active');
+        }
+
+        function selectVehicle(el, type, price) {
+            document.querySelectorAll('.veh-item').forEach(i => i.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedVehicle = { type, price };
+        }
+
+        // --- LIVE DRIVERS ON MAP ---
+        function listenForDrivers() {
+            database.ref('active_gigs').on('value', snap => {
+                // Clear old markers (naive)
+                for(let k in driversOnMap) map.removeLayer(driversOnMap[k]);
+                driversOnMap = {};
+
+                if(!snap.exists()) return;
+
+                snap.forEach(typeSnap => {
+                    const vType = typeSnap.key; // Bike, Tuk...
+                    typeSnap.forEach(driverSnap => {
+                        const d = driverSnap.val();
+                        // Show only idle drivers or currently assigned driver
+                        if(d.location && (d.active_session === 'searching' || d.driver_id === activeDriverId)) {
+                            const iconUrl = vehicleConfig[vType]?.img || vehicleConfig['Bike'].img;
+                            const marker = L.marker([d.location.lat, d.location.lng], {
+                                icon: L.icon({ iconUrl: iconUrl, iconSize: [40, 25] })
+                            }).addTo(map);
+                            driversOnMap[d.driver_id] = marker;
+                        }
+                    });
+                });
             });
         }
 
         // --- REQUEST LOGIC ---
-        function findDriver() {
-            // Filter by type & rejected
-            const candidates = availableDrivers
-                .filter(d => d.key === selectedVehicle && !rejectedDrivers.includes(d.id))
-                .sort((a,b) => parseFloat(a.price_per_100m) - parseFloat(b.price_per_100m));
+        async function requestRide() {
+            if(!selectedVehicle) return showToast("Select a vehicle type");
+            
+            document.getElementById('sheet-vehicles').classList.remove('active');
+            document.getElementById('sheet-searching').classList.add('active');
 
-            if(candidates.length === 0) {
-                alert("No drivers available. Try again.");
-                rejectedDrivers = [];
-                document.getElementById('searching-overlay').style.display = 'none';
+            // Find Nearest Driver logic
+            const snapshot = await database.ref(`active_gigs/${selectedVehicle.type}`).once('value');
+            let bestDriver = null;
+            let minDist = Infinity;
+
+            if(snapshot.exists()) {
+                snapshot.forEach(child => {
+                    const d = child.val();
+                    if(d.active_session === 'searching') { // Driver is Available
+                        const dist = Math.sqrt(Math.pow(d.location.lat - locPickup.lat, 2) + Math.pow(d.location.lng - locPickup.lng, 2));
+                        if(dist < minDist) { minDist = dist; bestDriver = d; }
+                    }
+                });
+            }
+
+            if(!bestDriver) {
+                setTimeout(() => {
+                    showToast("No drivers found.");
+                    document.getElementById('sheet-searching').classList.remove('active');
+                    document.getElementById('sheet-vehicles').classList.add('active');
+                }, 3000);
                 return;
             }
 
-            document.getElementById('searching-overlay').style.display = 'flex';
+            // Send Request
+            activeDriverId = bestDriver.driver_id;
+            activeTripRef = database.ref(`active_gigs/${selectedVehicle.type}/${activeDriverId}`);
             
-            // Create Request
-            const driver = candidates[0];
-            currentReqId = db.ref('ride_requests').push().key;
-            db.ref(`ride_requests/${currentReqId}`).set({
-                id: currentReqId,
-                user_id: userId,
-                driver_id: driver.id,
-                status: 'pending',
-                pickup: pickupCoords,
-                dropoff: dropoffCoords,
-                vehicle: selectedVehicle,
-                timestamp: Date.now(),
-                rejected_drivers: rejectedDrivers
-            });
-
-            // Monitor Request
-            db.ref(`ride_requests/${currentReqId}`).on('value', snap => {
-                const ride = snap.val();
-                if(!ride) return;
-
-                // Driver Declined (Check logic: if DB updated rejected list)
-                if(ride.rejected_drivers && ride.rejected_drivers.length > rejectedDrivers.length) {
-                    rejectedDrivers = ride.rejected_drivers;
-                    db.ref(`ride_requests/${currentReqId}`).off(); // Stop listening to old
-                    db.ref(`ride_requests/${currentReqId}`).remove(); // Delete old
-                    findDriver(); // Retry next
+            const payload = {
+                active_session: 'ride', // Triggers driver modal
+                availability: 'idle',   // Locks driver
+                request_details: {
+                    userId: userPhone,
+                    userName: userName,
+                    userPic: "https://randomuser.me/api/portraits/men/32.jpg",
+                    pickup: { lat: locPickup.lat, lng: locPickup.lng, address: document.getElementById('txt-pickup').innerText },
+                    drop: { lat: locDrop.lat, lng: locDrop.lng, address: document.getElementById('txt-drop').innerText },
+                    distance_km: tripDistance.toFixed(1),
+                    est_time: Math.round(tripDistance * 3),
+                    price: selectedVehicle.price
                 }
+            };
 
-                // Accepted
-                if(ride.status === 'accepted') {
-                    document.getElementById('searching-overlay').style.display = 'none';
-                    document.getElementById('veh-card').classList.remove('show');
-                    document.getElementById('active-ride-panel').classList.add('active');
-                    updateDriverPanel(ride.driver_id);
-                }
-                
-                // Status Updates
-                if(ride.status === 'arrived') updateStatus("DRIVER ARRIVED", "#4CAF50");
-                if(ride.status === 'in_progress') updateStatus("ON TRIP", "#E31C25");
-                
-                // Chat
-                if(ride.chat) renderChat(ride.chat);
-
-                // Completed
-                if(ride.status === 'completed') {
-                    document.getElementById('active-ride-panel').classList.remove('active');
-                    document.getElementById('rating-screen').style.display = 'flex';
-                    document.getElementById('final-bill').innerText = ride.final_price + " LKR";
-                }
-            });
+            await activeTripRef.update(payload);
+            monitorTrip();
         }
 
-        function updateDriverPanel(did) {
-            db.ref('drivers/' + did).once('value', s => {
-                const d = s.val();
-                document.getElementById('d-name').innerText = d.name;
-                document.getElementById('d-veh').innerText = selectedVehicle;
-                document.getElementById('d-plate').innerText = d.vehiclePlate;
-                document.getElementById('d-pic').src = d.profile_pic || 'https://via.placeholder.com/50';
-                document.getElementById('d-call').href = `tel:${d.mobile}`;
-                
-                // Track Driver
-                db.ref(`active_gigs/${selectedVehicle}/${did}/location`).on('value', locS => {
-                    const l = locS.val();
-                    if(l) {
-                        if(driverMarker) driverMarker.setLatLng(l);
-                        else driverMarker = L.marker(l).addTo(map);
+        function monitorTrip() {
+            activeTripRef.on('value', snap => {
+                const d = snap.val();
+                if(!d) return;
+
+                // Driver Rejected or Timeout
+                if(d.active_session === 'searching') {
+                    // If we were waiting and it went back to searching, driver declined
+                    if(document.getElementById('sheet-searching').classList.contains('active')) {
+                        showToast("Driver declined. Try again.");
+                        cancelRequest();
                     }
-                });
+                    // If trip Ended
+                    if(document.getElementById('sheet-trip').classList.contains('active')) {
+                        endTripFlow();
+                    }
+                }
+
+                // Driver Accepted
+                if(d.active_session === 'confirmed' || d.active_session === 'accepted') {
+                    showTripUI(d);
+                    document.getElementById('trip-status-text').innerText = "Driver is on the way";
+                    document.getElementById('trip-status-text').style.background = "#eff6ff";
+                    document.getElementById('trip-status-text').style.color = "#1e40af";
+                }
+
+                // Driver Arrived
+                if(d.active_session === 'arrived') { // Note: Driver app manages this state internally mostly
+                    // Since driver app doesn't change 'active_session' string explicitly to 'arrived' in DB 
+                    // (it keeps 'confirmed' mostly but updates UI), let's assume 'confirmed' is ongoing.
+                    // However, we can listen to location to see if close.
+                }
             });
         }
 
-        function updateStatus(txt, color) {
-            const el = document.getElementById('d-status');
-            el.innerText = txt;
-            el.style.background = color;
-        }
-
-        // --- CHAT ---
-        function sendChat() {
-            const txt = document.getElementById('chat-msg').value;
-            if(!txt) return;
-            db.ref(`ride_requests/${currentReqId}/chat`).push({ sender: 'user', text: txt });
-            document.getElementById('chat-msg').value = '';
-        }
-        function renderChat(chat) {
-            const box = document.getElementById('chat-feed');
-            box.innerHTML = '';
-            Object.values(chat).forEach(m => {
-                const d = document.createElement('div');
-                d.className = `chat-msg ${m.sender === 'user' ? 'me' : 'them'}`;
-                d.innerText = m.text;
-                box.appendChild(d);
-            });
-            box.scrollTop = box.scrollHeight;
+        function showTripUI(d) {
+            document.getElementById('sheet-searching').classList.remove('active');
+            document.getElementById('sheet-trip').classList.add('active');
+            
+            document.getElementById('d-name').innerText = d.driver_name;
+            document.getElementById('d-vehicle').innerText = selectedVehicle.type;
+            document.getElementById('d-plate').innerText = d.vehicle_plate;
+            document.getElementById('d-pic').src = d.profile_pic || 'https://via.placeholder.com/60';
+            document.getElementById('d-rating').innerText = d.rating || "5.0";
+            document.getElementById('d-call').href = `tel:${d.mobile}`;
         }
 
         function cancelRequest() {
-            if(currentReqId) db.ref(`ride_requests/${currentReqId}`).remove();
-            location.reload();
+            if(activeTripRef) {
+                activeTripRef.update({ active_session: 'searching', availability: true, request_details: null });
+                activeTripRef.off();
+                activeTripRef = null;
+            }
+            document.getElementById('sheet-searching').classList.remove('active');
+            document.getElementById('sheet-trip').classList.remove('active');
+            document.getElementById('sheet-vehicles').classList.add('active');
         }
+
+        // --- END & RATING ---
+        function endTripFlow() {
+            document.getElementById('sheet-trip').classList.remove('active');
+            activeTripRef.off(); // Stop listening
+            activeTripRef = null;
+            if(routeControl) map.removeControl(routeControl);
+            
+            // Show Rating
+            document.getElementById('rating-modal').style.display = 'flex';
+        }
+
+        let ratingVal = 0;
+        function setStar(n) {
+            ratingVal = n;
+            const stars = document.querySelectorAll('#rating-stars i');
+            stars.forEach((s, i) => {
+                if(i < n) s.classList.add('active');
+                else s.classList.remove('active');
+            });
+        }
+
+        function submitRating() {
+            if(ratingVal === 0) return showToast("Please rate to continue");
+            
+            // Update Driver Rating (Simple Logic)
+            const driverRef = database.ref(`drivers/${activeDriverId}`);
+            driverRef.once('value').then(snap => {
+                const d = snap.val();
+                const currentR = parseFloat(d.rating || 5.0);
+                const newR = ((currentR + ratingVal) / 2).toFixed(1);
+                driverRef.update({ rating: newR });
+                
+                document.getElementById('rating-modal').style.display = 'none';
+                showToast("Rating Submitted. Thank you!");
+                
+                // Reset UI to start
+                locPickup = null; locDrop = null; selectedVehicle = null;
+                document.getElementById('txt-drop').innerText = "Where to?";
+                document.getElementById('search-panel').classList.remove('hidden');
+                initMap(); // Reset map view
+            });
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
     </script>
 </body>
 </html>
