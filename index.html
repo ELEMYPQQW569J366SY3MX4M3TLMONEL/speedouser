@@ -15,8 +15,7 @@
             --white: #ffffff;
             --gray-light: #f0f0f0;
             --text-dark: #333333;
-            /* UPDATED: Very small radius */
-            --radius: 5px;
+            --radius: 5px; /* Very small radius */
         }
 
         * {
@@ -31,7 +30,7 @@
             height: 100%;
             width: 100%;
             background-color: var(--white);
-            overflow: hidden;
+            overflow: hidden; /* Prevent scrolling on the body */
         }
 
         /* --- LOADER --- */
@@ -64,24 +63,24 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-        /* --- MAIN LAYOUT --- */
+        /* --- MAIN LAYOUT (Flexbox) --- */
         #app-container {
             opacity: 0;
             transition: opacity 0.5s ease;
-            position: relative;
             height: 100vh;
             width: 100vw;
+            display: flex;
+            flex-direction: column; /* Stack Image on top of Card */
         }
 
-        /* Image Section - 3/4 of screen */
+        /* Image Section - Fills remaining space */
         .image-container {
-            position: absolute;
-            top: 0;
-            left: 0;
+            flex: 1; /* This makes it take all available space not used by the card */
             width: 100%;
-            height: 75%; /* 3/4 Height */
+            position: relative;
             overflow: hidden;
             z-index: 1;
+            min-height: 200px; /* Prevent image from disappearing completely on small screens/keyboard open */
         }
 
         .image-container img {
@@ -91,32 +90,27 @@
             display: block;
         }
 
-        /* Bottom Card - Overlaps image */
+        /* Bottom Card - Fits content exactly */
         .bottom-card {
-            position: absolute;
-            bottom: 0;
-            left: 0;
             width: 100%;
-            height: 45%; /* Slightly less than half to ensure 3/4 image feel, but covers enough */
+            height: auto; /* Allow height to shrink to content */
             background-color: var(--white);
             border-top-left-radius: var(--radius);
             border-top-right-radius: var(--radius);
             z-index: 10;
-            padding: 20px 25px;
+            padding: 25px 25px 35px 25px; /* Extra padding bottom for safe area */
             display: flex;
             flex-direction: column;
             align-items: center;
-            /* Shadow to separate from image visual if needed, but requested 'no shadows' on card itself? 
-               Prompt said "without any shadows". Adhering to that. */
+            box-shadow: none; /* No shadow as requested */
         }
 
         #card-content {
             width: 100%;
-            height: 100%;
+            /* No fixed height */
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start; /* Aligns content to top to reduce space */
             transition: transform 0.3s ease, opacity 0.3s ease;
         }
 
@@ -133,7 +127,7 @@
             font-size: 1.2rem;
             color: var(--text-dark);
             text-align: center;
-            margin-bottom: 15px; /* Reduced margin */
+            margin-bottom: 20px; 
             margin-top: 5px;
             font-weight: 700;
         }
@@ -142,7 +136,7 @@
         .lang-btn {
             width: 100%;
             padding: 12px;
-            margin-bottom: 8px; /* Tighter spacing */
+            margin-bottom: 8px;
             border: 1px solid #ccc;
             border-radius: var(--radius);
             background: white;
@@ -167,7 +161,7 @@
             border: none;
             border-radius: var(--radius);
             font-size: 1rem;
-            margin-top: 15px; /* Fixed small margin, no longer pushed to bottom */
+            margin-top: 15px; 
             cursor: pointer;
             display: flex;
             justify-content: center;
@@ -197,18 +191,18 @@
             color: #777;
             text-align: center;
             width: 100%;
-            margin-top: 10px;
+            margin-top: 15px;
             line-height: 1.3;
         }
 
-        /* UPDATED OTP STYLES */
+        /* OTP Styles */
         .otp-container {
             display: flex;
-            justify-content: space-between; /* Spreads them out */
+            justify-content: space-between;
             width: 100%;
-            max-width: 320px; /* Limit width */
+            max-width: 320px;
             margin: 20px 0;
-            gap: 15px; /* "Space between each otp box more higher" */
+            gap: 15px;
         }
 
         .otp-box {
@@ -260,12 +254,13 @@
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
 
+        /* Loader in card */
         .card-loader {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100%;
+            padding: 20px 0;
         }
         
         input::-webkit-outer-spin-button,
@@ -277,12 +272,15 @@
 </head>
 <body>
 
+    <!-- Loading Overlay -->
     <div id="loader-container">
         <div class="glowing-dot"></div>
     </div>
 
+    <!-- Toast -->
     <div id="toast"></div>
 
+    <!-- Main App -->
     <div id="app-container">
         <div class="image-container">
             <img id="main-bg" alt="Speedo Background">
@@ -541,7 +539,7 @@
                 const b = document.createElement('input');
                 b.type='number'; 
                 b.className='otp-box';
-                b.placeholder = '-'; // Guide placeholder
+                b.placeholder = '-'; 
                 b.oninput = () => { if(b.value.length>1) b.value=b.value[0]; };
                 b.onkeyup = (e) => {
                     if((e.key>=0 && e.key<=9) || e.key==='Backspace'){
@@ -561,7 +559,6 @@
             resend.className = 'resend-link';
             resend.textContent = t.resend_code;
             resend.onclick = () => {
-                 // Resend logic
                  generatedOtp = Math.floor(1000 + Math.random()*9000).toString();
                  window.showToast("Resending...");
                  if(!bypassOtp) window.sendSms('+94'+selectedPhone.substring(1), generatedOtp);
