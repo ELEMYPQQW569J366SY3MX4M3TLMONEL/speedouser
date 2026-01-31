@@ -3,924 +3,716 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SPEEDO User App</title>
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600;700&family=Noto+Sans+Sinhala:wght@400;600&family=Hind+Madurai:wght@400;600&display=swap" rel="stylesheet">
+    <title>Speedo Driver Registration</title>
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Google Fonts for Sinhala and Tamil support -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;700&family=Noto+Sans+Tamil:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
-        /* --- CSS VARIABLES --- */
         :root {
-            --primary: #E31C25; /* Red Theme */
-            --primary-dark: #b9151c;
-            --bg: #ffffff;
-            --text: #333333;
-            --gray: #f4f4f4;
-            --border: #ddd;
-            --error: #d32f2f;
-            
-            --font-poppins: 'Poppins', sans-serif;
-            --font-inter: 'Inter', sans-serif;
-            --font-sinhala: 'Noto Sans Sinhala', sans-serif;
-            --font-tamil: 'Hind Madurai', sans-serif;
+            --primary-red: #ff0000;
+            --white: #ffffff;
+            --gray-light: #f0f0f0;
+            --text-dark: #333333;
+            --radius: 15px;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        
-        /* FIX: STRICT NO SCROLL LAYOUT */
-        body {
-            font-family: var(--font-inter);
-            background: var(--bg);
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden; /* STRICTLY NO SCROLL ON BODY */
-            color: var(--text);
-            display: flex;
-            flex-direction: column;
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Roboto', 'Noto Sans Sinhala', 'Noto Sans Tamil', sans-serif;
         }
 
-        .hidden { display: none !important; }
-        .fade-in { animation: fadeIn 0.4s ease-in forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* --- SPLASH SCREEN --- */
-        #splash-screen {
-            position: fixed; inset: 0; background: white; z-index: 9999;
-            display: flex; justify-content: center; align-items: center;
-        }
-        #splash-logo { width: 50%; max-width: 180px; object-fit: contain; }
-
-        /* --- LOGIN SCREEN --- */
-        #login-screen { 
-            width: 100%; 
-            height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
-            position: relative; 
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            background-color: var(--white);
             overflow: hidden;
         }
-        
-        /* IMAGE CONTAINER */
-        .top-img-container { 
-            flex: 1; /* Takes remaining space */
-            width: 100%; 
-            overflow: hidden; 
-            position: relative;
-            min-height: 40vh; 
-            z-index: 1;
-        }
-        .top-img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* BOTTOM FLOATING CARD */
-        .bottom-card {
+        /* --- LOADER --- */
+        #loader-container {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            height: auto; 
-            max-height: 55vh; 
-            background: white; 
-            border-radius: 30px 30px 0 0; 
-            padding: 24px; 
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
-            overflow-y: auto; /* Internal scroll only if content overflows on tiny screens */
-        }
-        
-        .input-group { display: flex; border: 2px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 15px; background: white; }
-        .input-group:focus-within { border-color: var(--primary); }
-        .prefix { background: var(--gray); padding: 12px; font-weight: 600; border-right: 1px solid var(--border); display: flex; align-items: center; font-size: 14px; }
-        input[type="tel"], input[type="text"], input[type="email"] {
-            flex: 1; border: none; padding: 12px; outline: none; font-family: var(--font-poppins); font-size: 15px;
-        }
-        
-        .btn-primary {
-            width: 100%; padding: 14px; background: var(--primary); color: white;
-            border: none; border-radius: 12px; font-weight: 600; font-family: var(--font-poppins);
-            cursor: pointer; transition: background 0.2s; margin-top: 10px;
-        }
-        .btn-primary:active { background: var(--primary-dark); }
-        .btn-primary:disabled { background: #ffcccc; cursor: not-allowed; }
-
-        .lang-btn {
-            width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px;
-            background: white; font-weight: 600; font-family: var(--font-poppins); margin-bottom: 10px;
-            color: #333; cursor: pointer;
-        }
-
-        .new-user-text {
-            font-size: 12px; color: #666; text-align: center; margin-top: 8px; margin-bottom: 8px; line-height: 1.4;
-        }
-
-        /* --- OTP INPUTS (FIXED VISIBILITY) --- */
-        .otp-container {
+            height: 100%;
+            background: var(--white);
             display: flex;
             justify-content: center;
-            gap: 10px; /* Spacing between boxes */
-            width: 100%;
-            margin-bottom: 20px;
+            align-items: center;
+            z-index: 9999;
         }
-        .otp-box { 
-            width: 60px; 
-            height: 65px; 
-            text-align: center; 
-            font-size: 28px; /* Larger Font */
+
+        .glowing-dot {
+            width: 20px;
+            height: 20px;
+            background-color: var(--primary-red);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--primary-red), 0 0 20px var(--primary-red);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* --- MAIN LAYOUT --- */
+        #app-container {
+            display: none; /* Hidden until loaded */
+            position: relative;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Image Section (Top 3/4 approx, gets covered) */
+        .image-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 75%;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Bottom Card (Bottom Half) */
+        .bottom-card {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50%; /* Half screen */
+            background-color: var(--white);
+            border-top-left-radius: var(--radius);
+            border-top-right-radius: var(--radius);
+            z-index: 10;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* No shadows as requested */
+        }
+
+        /* Content Container for Animations */
+        #card-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .slide-out-left {
+            transform: translateX(-100%);
+            opacity: 0;
+        }
+
+        .slide-in-right {
+            animation: slideIn 0.4s forwards;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Typography & Elements */
+        h2 {
+            font-size: 1.2rem;
+            color: var(--text-dark);
+            text-align: center;
+            margin-bottom: 20px;
             font-weight: 700;
-            /* VISIBLE OUTLINE STYLES */
-            border: 2px solid #ccc; /* Gray Outline */
-            border-radius: 12px;
-            outline: none; 
-            background-color: #ffffff; /* White Background */
-            color: #000; /* Black Text */
-            /* Add subtle depth so box is distinct from background */
-            box-shadow: inset 1px 1px 3px rgba(0,0,0,0.05);
-            transition: border-color 0.2s;
+        }
+
+        .lang-btn {
+            width: 90%;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: var(--radius);
+            background: white;
+            font-size: 1rem;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.2s;
+        }
+
+        .lang-btn.selected {
+            border: 2px solid var(--primary-red);
+            color: var(--primary-red);
+            font-weight: bold;
+            background-color: #fff0f0;
+        }
+
+        .btn-continue {
+            width: 90%;
+            padding: 15px;
+            background-color: var(--primary-red);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            margin-top: auto; /* Push to bottom */
+            margin-bottom: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .input-group {
+            width: 90%;
+            margin-bottom: 10px;
+        }
+
+        input[type="tel"], input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: var(--radius);
+            font-size: 1.1rem;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--primary-red);
+        }
+
+        .terms-text {
+            font-size: 0.75rem;
+            color: #777;
+            text-align: center;
+            width: 90%;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        /* OTP Input Styles */
+        .otp-container {
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+            margin: 20px 0;
+        }
+
+        .otp-box {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            font-size: 1.5rem;
+            border: 1px solid #ccc;
+            border-radius: var(--radius);
+        }
+
+        /* Toast */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: var(--radius);
+            padding: 16px;
+            position: fixed;
+            z-index: 100;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-size: 14px;
+        }
+
+        #toast.show {
+            visibility: visible;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+
+        @keyframes fadein {
+            from {bottom: 0; opacity: 0;} 
+            to {bottom: 30px; opacity: 1;}
+        }
+
+        @keyframes fadeout {
+            from {bottom: 30px; opacity: 1;} 
+            to {bottom: 0; opacity: 0;}
+        }
+
+        /* Final Loading State within Card */
+        .card-loader {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
         }
         
-        /* Hide default spinners on mobile that break the outline */
-        .otp-box::-webkit-outer-spin-button,
-        .otp-box::-webkit-inner-spin-button,
-        .otp-box::-webkit-calendar-picker-indicator {
+        /* Helper to hide scrollbars on inputs */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
             -webkit-appearance: none;
             margin: 0;
-        }
-
-        /* Focus State - Red Border */
-        .otp-box:focus {
-            border-color: var(--primary); /* Red Outline */
-            box-shadow: inset 1px 1px 3px rgba(227, 28, 37, 0.1);
-        }
-
-        /* --- REGISTRATION SCREEN --- */
-        #reg-screen {
-            position: fixed; inset: 0; background: white; z-index: 100;
-            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
-        }
-        .progress-container { width: 100%; height: 6px; background: #eee; flex-shrink: 0; }
-        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s ease; }
-
-        .carousel-container { flex: 1; position: relative; overflow: hidden; width: 100%; }
-        .carousel-track { display: flex; height: 100%; width: 500%; transition: transform 0.4s ease-in-out; }
-        .slide { min-width: 20%; height: 100%; padding: 24px; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow-y: auto;}
-
-        h2 { font-family: var(--font-poppins); margin-bottom: 20px; color: var(--primary); text-align: center; font-size: 22px;}
-        
-        .field-group { width: 100%; margin-bottom: 15px; text-align: left; }
-        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: #555; }
-        select { width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 12px; font-family: var(--font-inter); outline: none; background: white; }
-        .warning-text { font-size: 11px; color: var(--error); margin-top: 5px; display: flex; align-items: center; gap: 4px; }
-
-        /* Camera */
-        .profile-preview {
-            width: 120px; height: 120px; border-radius: 50%; background: var(--gray);
-            border: 4px solid var(--primary); display: flex; justify-content: center; align-items: center;
-            margin-bottom: 20px; overflow: hidden; cursor: pointer; position: relative;
-        }
-        .profile-preview img { width: 100%; height: 100%; object-fit: cover; }
-        .profile-preview span { font-size: 12px; color: #888; text-align: center; padding: 10px; }
-        
-        .camera-popup { position: fixed; inset: 0; background: black; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .camera-wrapper { position: relative; width: 100%; height: 70vh; display: flex; justify-content: center; align-items: center; }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        .oval-overlay { position: absolute; width: 250px; height: 320px; border: 2px solid rgba(255,255,255,0.8); border-radius: 50%; box-shadow: 0 0 0 9999px rgba(0,0,0,0.5); pointer-events: none; }
-        .camera-instructions { position: absolute; top: 20px; color: white; font-size: 13px; text-align: center; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 20px; width: 90%; line-height: 1.4; }
-        .capture-btn { width: 70px; height: 70px; border-radius: 50%; border: 4px solid white; background: transparent; margin-top: 20px; cursor: pointer; position: relative; }
-        .capture-btn::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 55px; height: 55px; background: white; border-radius: 50%; }
-
-        /* Slider */
-        .slide-agree-container { width: 100%; margin-top: 20px; }
-        .slider-track { width: 100%; height: 56px; background: #eee; border-radius: 28px; position: relative; overflow: hidden; display: flex; align-items: center; padding-left: 15px; }
-        .slider-text { color: #999; font-size: 14px; font-weight: 600; pointer-events: none; width: 100%; text-align: center; margin-left: 30px;}
-        .slider-thumb { width: 46px; height: 46px; background: white; border-radius: 50%; position: absolute; left: 5px; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); cursor: grab; z-index: 2; }
-        .slider-thumb i { display: block; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 10px solid #ccc; }
-        .slider-track.unlocked { background: var(--primary); }
-        .slider-track.unlocked .slider-text { color: white; }
-        .slider-track.unlocked .slider-thumb { left: calc(100% - 51px); background: var(--primary); }
-
-        /* Status & Toast */
-        .status-screen { position: fixed; inset: 0; background: white; z-index: 150; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px; text-align: center; }
-        .status-icon { font-size: 60px; margin-bottom: 20px; }
-        #toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 10000; width: 90%; pointer-events: none; }
-        .toast { background: rgba(0,0,0,0.9); color: white; padding: 12px 20px; border-radius: 8px; margin-top: 10px; font-size: 14px; text-align: center; animation: fadeIn 0.3s; }
-        .toast.error { background: var(--error); }
-
-        .reason-box {
-            background: #ffebee;
-            color: #c62828;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            font-size: 13px;
-            line-height: 1.5;
-            border:1px solid #ffcdd2;
-            text-align: left;
-            width: 100%;
-            max-width: 300px;
         }
     </style>
 </head>
 <body>
 
-    <!-- SPLASH SCREEN -->
-    <div id="splash-screen">
-        <img src="https://i.ibb.co/0y4f8HBn/56bfb5ea-125e-4071-a5dc-63762dbddc05.jpg" id="splash-logo">
+    <!-- Loader -->
+    <div id="loader-container">
+        <div class="glowing-dot"></div>
     </div>
 
-    <!-- STATUS SCREENS (FULLY TRANSLATED) -->
-    
-    <!-- HELD SCREEN -->
-    <div id="status-held-screen" class="status-screen hidden">
-        <div class="status-icon">🛑</div>
-        <h2 data-i18n="account_on_hold" style="color: #d32f2f;">Account on Hold</h2>
-        <p data-i18n="visit_care">Your account is on Hold. Visit our customer care center at speedo.lk for more information.</p>
-    </div>
+    <!-- Toast -->
+    <div id="toast"></div>
 
-    <!-- PENDING SCREEN -->
-    <div id="status-pending-screen" class="status-screen hidden">
-        <div class="status-icon">⏳</div>
-        <h2 data-i18n="account_pending" style="color: #FFA000;">Account Pending</h2>
-        <p data-i18n="check_later">Your registration is under review. Please check back later.</p>
-    </div>
-    
-    <!-- DECLINED SCREEN -->
-    <div id="status-declined-screen" class="status-screen hidden">
-        <div class="status-icon">❌</div>
-        <h2 data-i18n="account_declined" style="color: #d32f2f;">Registration Declined</h2>
-        <p data-i18n="declined_msg">Your registration request was declined by our admin.</p>
-        
-        <!-- Reasons Box -->
-        <div class="reason-box">
-            <strong data-i18n="reasons_label">Reasons:</strong>
-            <div id="declined-reasons-display" style="margin-top:5px;">
-                <!-- JS will populate this -->
-            </div>
+    <!-- App -->
+    <div id="app-container">
+        <div class="image-container">
+            <!-- Lazy loaded via JS -->
+            <img id="main-bg" alt="Speedo Background">
         </div>
 
-        <button class="btn-primary" style="margin-top:20px;" onclick="handleTryAgain()" data-i18n="try_again">Try Again</button>
-    </div>
-
-    <!-- LOGIN SCREEN -->
-    <div id="login-screen" class="hidden">
-        <div class="top-img-container">
-            <img src="https://i.ibb.co/2105w0q7/download.jpg" class="top-img">
-        </div>
         <div class="bottom-card">
-            
-            <!-- Language Selection -->
-            <div id="login-lang">
-                <h2 data-i18n="select_language" style="margin-bottom:20px;">Select Language</h2>
-                <button class="lang-btn" onclick="changeLanguage('English')">English</button>
-                <button class="lang-btn font-sinhala" onclick="changeLanguage('Sinhala')">සිංහල</button>
-                <button class="lang-btn font-tamil" onclick="changeLanguage('Tamil')">தமிழ்</button>
-            </div>
-
-            <!-- Phone Entry -->
-            <div id="login-phone" class="hidden fade-in">
-                <h2 data-i18n="enter_mobile" style="margin-bottom:15px;">Enter Mobile</h2>
-                <div class="input-group">
-                    <div class="prefix">+94</div>
-                    <input type="tel" id="phone-input" data-i18n-ph="phone_placeholder" placeholder="7X XXX XXXX" maxlength="9" inputmode="numeric">
-                </div>
-                <p class="new-user-text" data-i18n="new_user_msg">If you are new to Speedo, after verifying your phone you will be redirected to registration.</p>
-                <button class="btn-primary" data-i18n="verify_number" onclick="initiateLoginCheck()">Verify Number</button>
-            </div>
-
-            <!-- Login OTP -->
-            <div id="login-otp" class="hidden fade-in" style="text-align: center;">
-                <h2 data-i18n="verification" style="margin-bottom:10px;">Verification</h2>
-                <p style="font-size:13px; color:#666; margin-bottom:20px;" id="login-otp-txt">OTP Sent</p>
-                
-                <div class="otp-container">
-                    <input type="tel" class="otp-box" maxlength="1" inputmode="numeric">
-                    <input type="tel" class="otp-box" maxlength="1" inputmode="numeric">
-                    <input type="tel" class="otp-box" maxlength="1" inputmode="numeric">
-                    <input type="tel" class="otp-box" maxlength="1" inputmode="numeric">
-                </div>
-
-                <button class="btn-primary" data-i18n="login" onclick="verifyLoginOtp()">Login</button>
-                <button class="btn-primary" style="background:transparent; color:#555; border:1px solid #ddd; margin-top:12px;" id="login-resend" data-i18n="resend" onclick="resendLoginOtp()">Resend Code</button>
-            </div>
-            
-            <div style="margin-top:auto; font-size:10px; color:#aaa; text-align:center;" data-i18n="terms_agree">By using SPEEDO you agree to Terms & Conditions.</div>
-        </div>
-    </div>
-
-    <!-- REGISTRATION SCREEN -->
-    <div id="reg-screen" class="hidden">
-        <div class="progress-container"><div class="progress-fill" id="reg-progress"></div></div>
-        <div class="carousel-container">
-            <div class="carousel-track" id="reg-track">
-                
-                <!-- Slide 1: OTP -->
-                <div class="slide">
-                    <h2 data-i18n="verify_mobile">Verify Mobile</h2>
-                    <p style="font-size:14px; color:#666; margin-bottom:20px;"><span data-i18n="otp_sent_to">We sent a code to</span> <span id="reg-phone-display"></span></p>
-                    
-                    <div class="otp-container">
-                        <input type="tel" class="otp-box" maxlength="1" id="r1" inputmode="numeric">
-                        <input type="tel" class="otp-box" maxlength="1" id="r2" inputmode="numeric">
-                        <input type="tel" class="otp-box" maxlength="1" id="r3" inputmode="numeric">
-                        <input type="tel" class="otp-box" maxlength="1" id="r4" inputmode="numeric">
-                    </div>
-
-                    <p id="reg-otp-error" style="color:var(--error); font-size:13px; margin-top:10px; min-height:20px;"></p>
-                    <button class="btn-primary" style="background:transparent; color:var(--primary); border:none; margin-top:15px;" onclick="resendRegOtp()" data-i18n="resend">Resend Code</button>
-                </div>
-
-                <!-- Slide 2: Name -->
-                <div class="slide">
-                    <h2 data-i18n="full_name">Full Name</h2>
-                    <div class="field-group">
-                        <input type="text" id="reg-name" data-i18n-ph="name_placeholder" placeholder="Eg : Name Here" style="text-transform:uppercase;">
-                        <div class="warning-text">⚠ <span data-i18n="name_warning">You cannot edit this after registering!</span></div>
-                    </div>
-                    <button class="btn-primary" data-i18n="next" onclick="nextSlide(2)">Next</button>
-                </div>
-
-                <!-- Slide 3: Details -->
-                <div class="slide">
-                    <h2 data-i18n="personal_details">Personal Details</h2>
-                    <div class="field-group">
-                        <label data-i18n="address">Address</label>
-                        <input type="text" id="reg-address" data-i18n-ph="addr_placeholder" placeholder="No, Street, City">
-                    </div>
-                    <div class="field-group" style="display:flex; gap:10px;">
-                        <div style="flex:1;"><label data-i18n="province">Province</label><select id="reg-province" onchange="loadDistricts()"></select></div>
-                        <div style="flex:1;"><label data-i18n="district">District</label><select id="reg-district"><option value="">Select Province</option></select></div>
-                    </div>
-                    <div class="field-group">
-                        <label data-i18n="nic">NIC Number (Mandatory)</label>
-                        <input type="text" id="reg-nic" data-i18n-ph="nic_placeholder" placeholder="Old or New NIC format">
-                    </div>
-                    <div class="field-group">
-                        <label data-i18n="email">Email (Optional)</label>
-                        <input type="email" id="reg-email" data-i18n-ph="email_placeholder" placeholder="example@mail.com">
-                    </div>
-                    <button class="btn-primary" data-i18n="next" onclick="nextSlide(3)">Next</button>
-                </div>
-
-                <!-- Slide 4: Image -->
-                <div class="slide">
-                    <h2 data-i18n="profile_picture">Profile Picture</h2>
-                    <div class="profile-preview" id="profile-preview-area" onclick="openCamera()">
-                        <span data-i18n="tap_capture">Tap to Capture</span>
-                    </div>
-                    <button class="btn-primary" data-i18n="next" onclick="nextSlide(4)">Next</button>
-                </div>
-
-                <!-- Slide 5: Agree -->
-                <div class="slide">
-                    <h2 data-i18n="agreement">Agreement</h2>
-                    <div style="background:#f9f9f9; padding:15px; border-radius:8px; font-size:12px; height:150px; overflow-y:scroll; margin-bottom:20px; border:1px solid #eee;">
-                        <strong data-i18n="terms">Terms and Conditions</strong><br><br>
-                        1. <span data-i18n="term1">I agree to provide accurate information.</span><br>
-                        2. <span data-i18n="term2">I understand that fake profiles will be banned.</span><br>
-                        3. <span data-i18n="term3">SPEEDO reserves right to verify documents.</span><br>
-                        4. <span data-i18n="term4">Data will be stored according to privacy laws.</span><br>
-                        5. <span data-i18n="term5">Misuse of platform leads to account suspension.</span>
-                    </div>
-                    <div class="slide-agree-container">
-                        <div class="slider-track" id="slider-track">
-                            <div class="slider-text" data-i18n="slide_agree">Slide to Agree & Register</div>
-                            <div class="slider-thumb" id="slider-thumb"><i></i></div>
-                        </div>
-                    </div>
-                </div>
-
+            <div id="card-content">
+                <!-- Dynamic Content Injected Here -->
             </div>
         </div>
     </div>
 
-    <!-- CAMERA POPUP -->
-    <div id="camera-popup" class="camera-popup hidden">
-        <div class="camera-instructions" data-i18n="camera_instr">Place your head inside the oval, Do not wear masks, helmets, sunglasses, caps or glasses</div>
-        <div class="camera-wrapper">
-            <video id="camera-video" autoplay playsinline></video>
-            <div class="oval-overlay"></div>
-        </div>
-        <button class="capture-btn" onclick="captureImage()"></button>
-    </div>
-
-    <div id="toast-container"></div>
-
-    <!-- SCRIPT -->
+    <!-- Firebase SDKs -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getDatabase, ref, set, get, remove } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+        import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
 
+        // Firebase Config
         const firebaseConfig = {
-            apiKey: "AIzaSyAXDoV_y0FKcKz2OdbY6UT5qTpCwkokJqg",
-            authDomain: "speedo-a162d.firebaseapp.com",
-            databaseURL: "https://speedo-a162d-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "speedo-a162d",
-            storageBucket: "speedo-a162d.firebasestorage.app",
-            messagingSenderId: "944425759845",
-            appId: "1:944425759845:web:f523b6ddbda9216d3c828c"
+            apiKey: "AIzaSyDeCmIR6QnvCJWRgBYxgLinxwMIOmJfMxc",
+            authDomain: "speedo-main.firebaseapp.com",
+            databaseURL: "https://speedo-main-default-rtdb.firebaseio.com",
+            projectId: "speedo-main",
+            storageBucket: "speedo-main.firebasestorage.app",
+            messagingSenderId: "3579467539",
+            appId: "1:3579467539:web:5409255e200431edcbece6",
+            measurementId: "G-9GTDXQ6E01"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // --- TRANSLATIONS (Simple, Professional, Colloquial) ---
+        // --- GLOBAL VARIABLES & STATE ---
+        let currentLang = 'en';
+        let selectedPhone = '';
+        let generatedOtp = '';
+        let bypassOtp = false;
+
+        // --- TRANSLATIONS ---
         const translations = {
-            English: {
-                select_language: "Select Language",
-                enter_mobile: "Enter Mobile",
-                phone_placeholder: "7X XXX XXXX",
-                new_user_msg: "If you are new to Speedo, after verifying your phone you will be redirected to registration.",
-                verify_number: "Verify Number",
-                verification: "Verification",
-                login: "Login",
-                resend: "Resend",
-                terms_agree: "By using SPEEDO you agree to Terms & Conditions.",
-                
-                // Status Translations
-                account_on_hold: "Account on Hold",
-                visit_care: "Your account is on Hold. Visit our customer care center at speedo.lk for more information.",
-                account_pending: "Account Pending",
-                check_later: "Your registration is under review. Please check back later.",
-                account_declined: "Registration Declined",
-                declined_msg: "Your registration request was declined by our admin.",
-                reasons_label: "Reasons:",
-                try_again: "Try Again",
-                
-                verify_mobile: "Verify Mobile",
-                otp_sent_to: "We sent a code to",
-                full_name: "Full Name",
-                name_placeholder: "Eg : Name Here",
-                name_warning: "You cannot edit this after registering!",
-                next: "Next",
-                personal_details: "Personal Details",
-                address: "Address",
-                addr_placeholder: "No, Street, City",
-                province: "Province",
-                district: "District",
-                nic: "NIC Number (Mandatory)",
-                nic_placeholder: "Old or New NIC format",
-                email: "Email (Optional)",
-                email_placeholder: "example@mail.com",
-                profile_picture: "Profile Picture",
-                tap_capture: "Tap to Capture",
-                agreement: "Agreement",
-                terms: "Terms and Conditions",
-                term1: "I agree to provide accurate information.",
-                term2: "I understand that fake profiles will be banned.",
-                term3: "SPEEDO reserves right to verify documents.",
-                term4: "Data will be stored according to privacy laws.",
-                term5: "Misuse of platform leads to account suspension.",
-                slide_agree: "Slide to Agree & Register",
-                camera_instr: "Place your head inside oval, Do not wear masks, helmets, sunglasses, caps or glasses",
-                otp_sent_success: "OTP Sent",
-                invalid_otp: "Invalid OTP",
-                registration_successful: "Registration Successful!",
-                registration_failed: "Registration Failed",
-                invalid_number: "Invalid Number"
+            en: {
+                select_lang: "Select a language to continue",
+                continue: "Continue",
+                phone_title: "Enter your phone number",
+                phone_hint: "e.g., 071XXXXXXX",
+                invalid_phone: "Invalid phone number. Must be 10 digits starting with 07.",
+                terms: "By logging in / registering on SPEEDO DRIVER, you agree to our terms and conditions. Visit SPEEDO website for more info",
+                otp_sent: "OTP sent successfully.",
+                verify_title: "Verify phone number",
+                verify_btn: "Verify",
+                wrong_otp: "Incorrect OTP. Please try again.",
+                please_wait: "Please Wait...",
+                registration: "Registration Form (New User)",
+                welcome_back: "Welcome Back!"
             },
-            Sinhala: {
-                select_language: "භාෂාව තෝරන්න",
-                enter_mobile: "දුරකථන අංකය ඇතුලත් කරන්න",
-                phone_placeholder: "7X XXX XXXX",
-                new_user_msg: "Speedo වෙත අලුත් නම්, ඔබගේ දුරකථන අංකය සත්‍යාපනය කිරීමෙන් පසු ලියාපදිංචියට යනු ලැබේ.",
-                verify_number: "අංකය තහවුරු කරන්න",
-                verification: "තහවුරු කිරීම",
-                login: "පිවිසෙන්න",
-                resend: "නැවත එවන්න",
-                terms_agree: "SPEEDO භාවිතා කිරීමෙන් ඔබ කොන්දේසි වලට එකඟ වේ.",
-                
-                // Status Translations (SINHALA)
-                account_on_hold: "ගිණුම තාවකාලිකව නවතා ඇත",
-                visit_care: "ඔබේ ගිණුම අත්හිටුවා ඇත. තවත් විස්තර සඳහා speedo.lk හි අපගේ පාරිභෝගික සේවා මධ්‍යස්ථානයට පැමිණෙන්න.",
-                account_pending: "ගිණුම පවතියි",
-                check_later: "ඔබේ ලියාපදිංචිය සමාලෝචනය කරමින් පවතී. කරුණාකර පසුව පරීක්ෂා කරන්න.",
-                account_declined: "ලියාපදිංචිය ප්‍රතික්ෂේප කරන ලදී",
-                declined_msg: "ඔබගේ ලියාපදිංචි ඉල්ලීම ප්‍රතික්ෂේප කරන ලදී.",
-                reasons_label: "හේතූන්:",
-                try_again: "නැවත උත්සාහ කරන්න",
-
-                verify_mobile: "දුරකථන අංකය තහවුරු කරන්න",
-                otp_sent_to: "අපි කේතයක් යවා ඇත",
-                full_name: "සම්පූර්ණ නම",
-                name_placeholder: "උදා: නම මෙතැන",
-                name_warning: "ලියාපදිංචි කිරීමෙන් පසු ඔබට මෙය වෙනස් කළ නොහැක!",
-                next: "ඊළඟ",
-                personal_details: "පෞද්ගලික විස්තර",
-                address: "ලිපිනය",
-                addr_placeholder: "නිවසේ අංකය, වීදිය, නගරය",
-                province: "පළාත",
-                district: "දිස්ත්‍රික්කය",
-                nic: "ජාතික හැඳුනුම්පත් අංකය (අනිවාර්ය)",
-                nic_placeholder: "පරණ හෝ නව NIC ස්වරූපය",
-                email: "විද්‍යුත් තැපෑල (අනිවාර්ය නොවේ)",
-                email_placeholder: "example@mail.com",
-                profile_picture: "ප්‍රොෆයිල් පින්තූරය",
-                tap_capture: "ඡායාරූපයක් ගන්න",
-                agreement: "එකඟතාවය",
-                terms: "නියම සහ කොන්දේසි",
-                term1: "මම නිවැරදි තොරතුරු සපයන බවට එකඟ වෙමි.",
-                term2: "ව්‍යාජ ගිණුම් තහනම් කරන බව මම දනිමි.",
-                term3: "ලේඛන සත්‍යාපනය කිරීමේ අයිතිය SPEEDO සතුය.",
-                term4: "දත්ත රහස්‍යතා නීති අනුව ගබඩා කෙරේ.",
-                term5: "වැරදි භාවිතය ගිණුම් අත්හිටුවීමට හේතු වේ.",
-                slide_agree: "එකඟ වීමට ස්ලයිඩ් කරන්න",
-                camera_instr: "ඔබේ හිස කොටුව තුළ තබන්න, මුඛාවරණ, හෙල්මට්, කණ්නාඩි නොපැළඳ සිටින්න",
-                otp_sent_success: "OTP යවන ලදී",
-                invalid_otp: "වලංගු නොවන OTP",
-                registration_successful: "ලියාපදිංචිය සාර්ථකයි!",
-                registration_failed: "ලියාපදිංචිය අසාර්ථකයි",
-                invalid_number: "වලංගු නොවන අංකයකි"
+            si: {
+                select_lang: "ඉදිරියට යාමට භාෂාවක් තෝරන්න",
+                continue: "ඉදිරියට යන්න",
+                phone_title: "ඔබගේ දුරකථන අංකය ඇතුළත් කරන්න",
+                phone_hint: "උදා: 071XXXXXXX",
+                invalid_phone: "දුරකථන අංකය වලංගු නොවේ. 07 න් ආරම්භ වන ඉලක්කම් 10 ක් විය යුතුය.",
+                terms: "SPEEDO DRIVER වෙත පිවිසීමෙන් / ලියාපදිංචි වීමෙන්, ඔබ අපගේ නියමයන් සහ කොන්දේසි වලට එකඟ වේ. වැඩි විස්තර සඳහා SPEEDO වෙබ් අඩවියට පිවිසෙන්න",
+                otp_sent: "OTP සාර්ථකව යවන ලදි.",
+                verify_title: "දුරකථන අංකය තහවුරු කරන්න",
+                verify_btn: "තහවුරු කරන්න",
+                wrong_otp: "වැරදි OTP අංකයකි. නැවත උත්සාහ කරන්න.",
+                please_wait: "කරුණාකර රැඳී සිටින්න...",
+                registration: "ලියාපදිංචි වීමේ පෝරමය",
+                welcome_back: "නැවතත් ආයුබෝවන්!"
             },
-            Tamil: {
-                select_language: "மொழியைத் தேர்ந்தெடுக்கவும்",
-                enter_mobile: "மொபைல் எண்ணை உள்ளிடவும்",
-                phone_placeholder: "7X XXX XXXX",
-                new_user_msg: "Speedo க்கு புதியவராக இருந்தால், உங்கள் தொலைபேசி எண்ணை சரிபார்த்தபிறகு பதிவுக்கு திருப்பி விடப்படுவீர்கள்.",
-                verify_number: "எண்ணை சரிபார்க்கவும்",
-                verification: "சரிபார்ப்பு",
-                login: "உள்நுழைய",
-                resend: "மீண்டும் அனுப்பு",
-                terms_agree: "SPEEDO ஐப் பயன்படுத்துவதன் மூலம் நீங்கள் விதிமுறைகளுக்கு இணங்குகிறீர்கள்.",
-                
-                // Status Translations (TAMIL)
-                account_on_hold: "கணக்கு நிறுத்தப்பட்டுள்ளது",
-                visit_care: "உங்கள் கணக்கு நிறுத்தப்பட்டுள்ளது. மேலும் தகவலுக்கு speedo.lk ஐப் பார்க்கவும்.",
-                account_pending: "கணக்கு நிலுவையில் உள்ளது",
-                check_later: "உங்கள் பதிவு பரிசீலனையில் உள்ளது.",
-                account_declined: "பதிவு நிராகரிக்கப்பட்டது",
-                declined_msg: "உங்கள் பதிவுக்கோரிக்கை நிர்வாகத்தால் நிராகரிக்கப்பட்டது.",
-                reasons_label: "காரணங்கள்:",
-                try_again: "மீண்டும் முயற்சிக்கவும்",
-
-                verify_mobile: "இலக்கத்தை உறுதிப்படுத்தவும்",
-                otp_sent_to: "நாங்கள் ஒரு குறியீட்டை அனுப்பியுள்ளோம்",
-                full_name: "முழு பெயர்",
-                name_placeholder: "எகா: பெயர் இங்கே",
-                name_warning: "பதிவுசெய்த பிறகு இதை மாற்ற முடியாது!",
-                next: "அடுத்து",
-                personal_details: "தனிப்பட்ட விவரங்கள்",
-                address: "முகவரி",
-                addr_placeholder: "எண், தெரு, நகரம்",
-                province: "மாகாணம்",
-                district: "மாவட்டம்",
-                nic: "தேசிய அடையாள அட்டை எண்",
-                nic_placeholder: "பழைய அல்லது புதிய NIC வடிவம்",
-                email: "மின்னஞ்சல் (தேவையெனில்)",
-                email_placeholder: "example@mail.com",
-                profile_picture: "சுயவிவரப் படம்",
-                tap_capture: "படம் பிடிக்கவும்",
-                agreement: "ஒப்பந்தம்",
-                terms: "விதிமுறைகள் மற்றும் நிபந்தனைகள்",
-                term1: "சரியான தகவல்களை வழங்குவதாக உறுதியளிக்கிறேன்.",
-                term2: "போலி கணக்குகள் தடை செய்யப்படும்.",
-                term3: "ஆவணங்களை சரிபார்க்க SPEEDO க்கு உரிமை உள்ளது.",
-                term4: "தரவு சட்டப்படி பாதுகாக்கப்படுகிறது.",
-                term5: "தவறான பயன்பாடு கணக்கு நீக்கத்திற்கு வழிவகுக்கும்.",
-                slide_agree: "ஏற்க ஸ்லைடு செய்யவும்",
-                camera_instr: "உங்கள் தலையை வட்டத்திற்குள் வைக்கவும். தொப்பி, கண்ணாடி அணிய வேண்டாம்.",
-                otp_sent_success: "OTP அனுப்பப்பட்டது",
-                invalid_otp: "தவறான OTP",
-                registration_successful: "பதிவு வெற்றிகரமாக முடிந்தது!",
-                registration_failed: "பதிவு தோல்வியடைந்தது",
-                invalid_number: "தவறான எண்"
+            ta: {
+                select_lang: "தொடர மொழியைத் தேர்ந்தெடுக்கவும்",
+                continue: "தொடரவும்",
+                phone_title: "உங்கள் தொலைபேசி எண்ணை உள்ளிடவும்",
+                phone_hint: "எ.கா. 071XXXXXXX",
+                invalid_phone: "தவறான தொலைபேசி எண். 07 இல் தொடங்கும் 10 இலக்கங்களாக இருக்க வேண்டும்.",
+                terms: "SPEEDO DRIVER இல் உள்நுழைவதன் / பதிவு செய்வதன் மூலம், எங்கள் விதிமுறைகள் மற்றும் நிபந்தனைகளை ஏற்கிறீர்கள். மேலும் தகவலுக்கு SPEEDO இணையதளத்தைப் பார்வையிடவும்",
+                otp_sent: "OTP வெற்றிகரமாக அனுப்பப்பட்டது.",
+                verify_title: "தொலைபேசி எண்ணை சரிபார்க்கவும்",
+                verify_btn: "சரிபார்க்கவும்",
+                wrong_otp: "தவறான OTP. மீண்டும் முயற்சிக்கவும்.",
+                please_wait: "காத்திருக்கவும்...",
+                registration: "பதிவு படிவம்",
+                welcome_back: "மீண்டும் வருக!"
             }
         };
 
-        // Global State
-        window.appState = { userPhone: "", loginOtp: null, regOtp: null, capturedImage: null, isCameraOpen: false };
-        window.currentLang = 'English';
-
-        // Province Data
-        const sriLankaData = {
-            "Western": ["Colombo", "Gampaha", "Kalutara"], "Central": ["Kandy", "Matale", "Nuwara Eliya"],
-            "Southern": ["Galle", "Matara", "Hambantota"], "Northern": ["Jaffna", "Kilinochchi", "Mannar", "Vavuniya", "Mullaitivu"],
-            "Eastern": ["Trincomalee", "Batticaloa", "Ampara"], "North Western": ["Kurunegala", "Puttalam"],
-            "North Central": ["Anuradhapura", "Polonnaruwa"], "Uva": ["Badulla", "Monaragala"],
-            "Sabaragamuwa": ["Ratnapura", "Kegalle"]
-        };
-
-        // --- TRANSLATION FUNCTION ---
-        window.changeLanguage = (lang) => {
-            window.currentLang = lang;
-            const t = translations[lang];
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if(t[key]) el.innerText = t[key];
-            });
-            document.querySelectorAll('[data-i18n-ph]').forEach(el => {
-                const key = el.getAttribute('data-i18n-ph');
-                if(t[key]) el.placeholder = t[key];
-            });
-            document.body.style.fontFamily = (lang === 'Sinhala') ? 'var(--font-sinhala)' : (lang === 'Tamil') ? 'var(--font-tamil)' : 'var(--font-inter)';
-            document.getElementById('login-lang').classList.add('hidden');
-            document.getElementById('login-phone').classList.remove('hidden');
-        };
-
-        // --- INIT ---
-        document.addEventListener("DOMContentLoaded", () => {
-            initSplash();
-            setupInputs();
-            setupSlider();
-            populateProvinces();
-        });
-
-        async function initSplash() {
-            const storedUser = localStorage.getItem('speedo_user_id');
-            if (storedUser) {
-                const userRef = ref(db, 'users/' + storedUser);
-                const snap = await get(userRef);
-                if (snap.exists()) {
-                    const data = snap.val();
-                    if (data.status === 'approved') { window.location.href = 'main.html'; return; }
-                    else if (data.status === 'held') showStatusScreen('held');
-                    else if (data.status === 'pending') showStatusScreen('pending');
-                    else if (data.status === 'declined') {
-                        showStatusScreen('declined');
-                        // Handle Reasons
-                        const reasonsDiv = document.getElementById('declined-reasons-display');
-                        if(data.reasons) {
-                            if(Array.isArray(data.reasons)) {
-                                reasonsDiv.innerHTML = data.reasons.map(r => `• ${r}`).join('<br>');
-                            } else {
-                                reasonsDiv.innerText = data.reasons;
-                            }
-                        } else {
-                            // Translated fallback if no reasons
-                            reasonsDiv.innerText = translations[window.currentLang].no_reasons || "No specific reasons provided.";
-                        }
-                    }
-                } else {
-                    // Local storage exists but DB doesn't (User was deleted externally)
-                    localStorage.removeItem('speedo_user_id');
-                    showLogin();
-                }
-            } else {
-                showLogin();
-            }
+        // --- UTILS ---
+        window.showToast = (message) => {
+            const x = document.getElementById("toast");
+            x.textContent = message;
+            x.className = "show";
+            setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
         }
 
-        function showLogin() {
-            setTimeout(() => {
-                document.getElementById('splash-screen').classList.add('hidden');
-                document.getElementById('login-screen').classList.remove('hidden');
-                document.getElementById('login-screen').classList.add('fade-in');
-            }, 2000);
-        }
-
-        function showStatusScreen(type) {
-            document.getElementById('splash-screen').classList.add('hidden');
-            if(type === 'held') document.getElementById('status-held-screen').classList.remove('hidden');
-            if(type === 'pending') document.getElementById('status-pending-screen').classList.remove('hidden');
-            if(type === 'declined') document.getElementById('status-declined-screen').classList.remove('hidden');
-        }
-
-        // --- TRY AGAIN LOGIC ---
-        window.handleTryAgain = async () => {
-            const userId = localStorage.getItem('speedo_user_id');
-            if (userId) {
-                try {
-                    // Delete from Database
-                    await remove(ref(db, 'users/' + userId));
-                } catch (e) {
-                    console.error("Error deleting user:", e);
-                }
-                // Delete from LocalStorage
-                localStorage.removeItem('speedo_user_id');
-                localStorage.removeItem('speedo_otp_ts');
-            }
-            // Reload App to start fresh
-            location.reload();
-        };
-
-        // --- LOGIN FLOW ---
-        window.initiateLoginCheck = async () => {
-            const phoneInput = document.getElementById('phone-input');
-            let num = phoneInput.value.trim();
-            if(num.startsWith('0')) num = num.substring(1);
-            
-            if(!/^[7]\d{8}$/.test(num)) { showToast(translations[window.currentLang].invalid_number); return; }
-            
-            window.appState.userPhone = "+94" + num;
-            
-            try {
-                // DIRECT LOOKUP TO AVOID INDEX ERROR
-                const snap = await get(ref(db, 'users/' + window.appState.userPhone));
-                
-                if(snap.exists()) {
-                    window.appState.loginOtp = Math.floor(1000 + Math.random()*9000).toString();
-                    sendSms(window.appState.userPhone.replace('+',''), window.appState.loginOtp);
-                    
-                    document.getElementById('login-phone').classList.add('hidden');
-                    document.getElementById('login-otp').classList.remove('hidden');
-                } else {
-                    startRegistration();
-                }
-            } catch (error) {
-                console.error(error);
-                showToast(translations[window.currentLang].registration_failed);
-            }
-        };
-
-        window.verifyLoginOtp = () => {
-            const inputs = document.querySelectorAll('#login-otp .otp-box');
-            let code = ""; inputs.forEach(i => code += i.value);
-            if(code === window.appState.loginOtp) {
-                localStorage.setItem('speedo_user_id', window.appState.userPhone);
-                window.location.href = 'main.html';
-            } else {
-                showToast(translations[window.currentLang].invalid_otp);
-            }
-        };
-
-        // --- REGISTRATION FLOW ---
-        function startRegistration() {
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('reg-screen').classList.remove('hidden');
-            document.getElementById('reg-phone-display').innerText = window.appState.userPhone;
-            window.appState.regOtp = Math.floor(1000 + Math.random()*9000).toString();
-            sendSms(window.appState.userPhone.replace('+',''), window.appState.regOtp);
-            setupRegOtpInputs();
-        }
-
-        function setupRegOtpInputs() {
-            const inputs = [document.getElementById('r1'), document.getElementById('r2'), document.getElementById('r3'), document.getElementById('r4')];
-            inputs.forEach((inp, idx) => {
-                inp.value = "";
-                inp.addEventListener('input', (e) => {
-                    if(e.target.value.length === 1 && idx < 3) inputs[idx+1].focus();
-                    if(idx === 3 && e.target.value.length === 1) {
-                        const full = inputs.map(i=>i.value).join('');
-                        if(full === window.appState.regOtp) {
-                            document.getElementById('reg-otp-error').innerText = "";
-                            nextSlide(1);
-                        } else {
-                            document.getElementById('reg-otp-error').innerText = translations[window.currentLang].invalid_otp;
-                        }
-                    }
-                });
-            });
-        }
-
-        window.nextSlide = (index) => {
-            if(index === 2 && !document.getElementById('reg-name').value) return showToast("Name required");
-            if(index === 3 && !document.getElementById('reg-nic').value) return showToast("NIC required");
-            if(index === 4 && !window.appState.capturedImage) return showToast("Capture Profile");
-
-            const track = document.getElementById('reg-track');
-            track.style.transform = `translateX(-${index * 20}%)`;
-            const fill = document.getElementById('reg-progress');
-            fill.style.width = `${((index + 1) / 5) * 100}%`;
-        };
-
-        function populateProvinces() {
-            const sel = document.getElementById('reg-province');
-            for(let p in sriLankaData) { const opt = document.createElement('option'); opt.value = p; opt.innerText = p; sel.appendChild(opt); }
-        }
-        window.loadDistricts = () => {
-            const pVal = document.getElementById('reg-province').value;
-            const dSel = document.getElementById('reg-district');
-            dSel.innerHTML = "";
-            if(sriLankaData[pVal]) { sriLankaData[pVal].forEach(d => { const opt = document.createElement('option'); opt.value = d; opt.innerText = d; dSel.appendChild(opt); }); }
-        };
-
-        window.openCamera = async () => {
-            const video = document.getElementById('camera-video');
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                video.srcObject = stream;
-                document.getElementById('camera-popup').classList.remove('hidden');
-                window.appState.isCameraOpen = true;
-            } catch(e) { showToast("Camera Access Denied"); }
-        };
-
-        window.captureImage = () => {
-            const video = document.getElementById('camera-video');
-            const canvas = document.createElement('canvas');
-            const size = Math.min(video.videoWidth, video.videoHeight);
-            canvas.width = 300; canvas.height = 300;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, (video.videoWidth - size)/2, (video.videoHeight - size)/2, size, size, 0, 0, 300, 300);
-            
-            const rawBase64 = canvas.toDataURL('image/jpeg', 0.6);
-            
-            // Apply compression to get ~20KB
-            compressBase64(rawBase64).then((compressed) => {
-                window.appState.capturedImage = compressed;
-                const preview = document.getElementById('profile-preview-area');
-                preview.innerHTML = `<img src="${window.appState.capturedImage}">`;
-                
-                document.getElementById('camera-popup').classList.add('hidden');
-                const stream = video.srcObject; if(stream) stream.getTracks().forEach(t => t.stop());
-                window.appState.isCameraOpen = false;
-            });
-        };
-
-        // --- IMAGE COMPRESSION HELPER ---
-        function compressBase64(base64Str) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.src = base64Str;
-                img.onload = () => {
-                    let width = img.width;
-                    let height = img.height;
-                    const maxWidth = 500; // Resize first to reasonable max
-                    if (width > maxWidth) {
-                        height *= maxWidth / width;
-                        width = maxWidth;
-                    }
-                    const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    let quality = 0.7;
-                    let dataUrl = canvas.toDataURL('image/jpeg', quality);
-
-                    // Aggressive loop to get under ~25k characters (approx 20KB binary)
-                    while (dataUrl.length > 30000 && quality > 0.1) {
-                        quality -= 0.1;
-                        dataUrl = canvas.toDataURL('image/jpeg', quality);
-                    }
-                    resolve(dataUrl);
-                };
-            });
-        }
-
-        function setupSlider() {
-            const track = document.getElementById('slider-track');
-            const thumb = document.getElementById('slider-thumb');
-            let isDragging = false;
-            const startDrag = (e) => { isDragging = true; e.preventDefault(); };
-            const moveDrag = (e) => {
-                if(!isDragging) return;
-                const rect = track.getBoundingClientRect();
-                let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-                let x = clientX - rect.left - 23;
-                const maxX = rect.width - 51;
-                if(x < 0) x = 0; if(x > maxX) x = maxX;
-                thumb.style.left = (x + 5) + 'px';
-                if(x > maxX - 10) { finishRegistration(); isDragging = false; }
-            };
-            const endDrag = () => { isDragging = false; thumb.style.left = '5px'; };
-            thumb.addEventListener('mousedown', startDrag); thumb.addEventListener('touchstart', startDrag);
-            document.addEventListener('mousemove', moveDrag); document.addEventListener('touchmove', moveDrag);
-            document.addEventListener('mouseup', endDrag); document.addEventListener('touchend', endDrag);
-        }
-
-        async function finishRegistration() {
-            const track = document.getElementById('slider-track');
-            track.classList.add('unlocked');
-            const name = document.getElementById('reg-name').value.toUpperCase();
-            const address = document.getElementById('reg-address').value;
-            const province = document.getElementById('reg-province').value;
-            const district = document.getElementById('reg-district').value;
-            const nic = document.getElementById('reg-nic').value;
-            const email = document.getElementById('reg-email').value || "";
-
-            try {
-                // Image is already compressed and stored in window.appState.capturedImage
-                const userData = {
-                    phone: window.appState.userPhone, fullName: name, address: address, province: province,
-                    district: district, nic: nic, email: email, profileImage: window.appState.capturedImage,
-                    status: 'approved', registeredAt: Date.now()
-                };
-
-                await set(ref(db, 'users/' + window.appState.userPhone), userData);
-                showToast(translations[window.currentLang].registration_successful);
-                localStorage.setItem('speedo_user_id', window.appState.userPhone);
-                setTimeout(() => { window.location.href = 'main.html'; }, 1000);
-
-            } catch(e) {
-                showToast(translations[window.currentLang].registration_failed);
-                track.classList.remove('unlocked');
-            }
-        }
-
+        // --- API SMS FUNCTION ---
         window.sendSms = async (recipient, otp) => {
+            // Recipient format conversion inside main logic, passed here as +94...
             try {
+                // Determine message based on current lang
+                let msg = "";
+                if(currentLang === 'si') {
+                    msg = `ඔබගේ SPEEDO තහවුරු කිරීමේ කේතය ${otp} වේ. කිසිවෙකු සමඟ බෙදා නොගන්න.`;
+                } else if (currentLang === 'ta') {
+                    msg = `உங்கள் SPEEDO சரிபார்ப்பு குறியீடு ${otp}. யாருடனும் பகிர வேண்டாம்.`;
+                } else {
+                    msg = `Your SPEEDO verification code is ${otp}. Please do not share this with anyone.`;
+                }
+
                 await fetch("https://app.text.lk/api/v3/sms/send", {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer 2975|Wz0ile7QSbXVtBMEfs3qrJcFHiz74DOnCkgfnJni36b0e4bc`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ recipient: recipient, sender_id: "TextLKDemo", type: "plain", message: `Your SPEEDO verification code is ${otp}.` })
+                    body: JSON.stringify({ recipient: recipient, sender_id: "TextLKDemo", type: "plain", message: msg })
                 });
+                
                 localStorage.setItem('speedo_otp_ts', Date.now().toString());
-                showToast(translations[window.currentLang].otp_sent_success);
-            } catch(e) { console.error(e); }
+                window.showToast(translations[currentLang].otp_sent);
+                renderStep('verify');
+            } catch(e) { 
+                console.error(e); 
+                window.showToast("SMS Error: " + e.message);
+            }
         };
 
-        function showToast(msg) {
-            const t = document.createElement('div');
-            t.className = 'toast'; t.innerText = msg;
-            document.getElementById('toast-container').appendChild(t);
-            setTimeout(() => t.remove(), 3000);
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            const img = document.getElementById('main-bg');
+            img.onload = () => {
+                // Image loaded, hide loader, show app
+                setTimeout(() => {
+                    document.getElementById('loader-container').style.display = 'none';
+                    document.getElementById('app-container').style.display = 'block';
+                    
+                    // Check local storage for lang
+                    const storedLang = localStorage.getItem('speedo_lang');
+                    if(storedLang) {
+                        currentLang = storedLang;
+                        renderStep('phone');
+                    } else {
+                        renderStep('language');
+                    }
+                }, 1000); // Small buffer
+            };
+            img.loading = "lazy";
+            img.src = "https://i.ibb.co/spSLzC3f/hblj.jpg";
+        };
+
+        // --- RENDER LOGIC ---
+        function renderStep(step) {
+            const contentDiv = document.getElementById('card-content');
+            
+            // Animation class for transition
+            contentDiv.classList.add('slide-out-left');
+
+            setTimeout(() => {
+                contentDiv.innerHTML = ''; // Clear content
+                contentDiv.classList.remove('slide-out-left');
+                contentDiv.classList.add('slide-in-right');
+
+                if (step === 'language') {
+                    renderLanguageStep(contentDiv);
+                } else if (step === 'phone') {
+                    renderPhoneStep(contentDiv);
+                } else if (step === 'verify') {
+                    renderVerifyStep(contentDiv);
+                } else if (step === 'loading') {
+                    renderLoadingStep(contentDiv);
+                } else if (step === 'registration') {
+                    renderRegistrationStep(contentDiv); // Not found in DB
+                } else if (step === 'dashboard') {
+                     renderDashboardStep(contentDiv); // Found in DB
+                }
+
+                // Remove animation class after playing
+                setTimeout(() => {
+                    contentDiv.classList.remove('slide-in-right');
+                }, 400);
+
+            }, 300); // Match CSS transition time
         }
-        
-        function setupInputs() {
-            const allOtps = document.querySelectorAll('.otp-box');
-            allOtps.forEach((inp, idx) => {
-                inp.addEventListener('keydown', (e) => { if(e.key === 'Backspace' && !inp.value && idx > 0) allOtps[idx-1].focus(); });
-            });
+
+        // --- STEP 1: LANGUAGE ---
+        function renderLanguageStep(container) {
+            const t = translations['en']; // Default for title before selection
+            
+            const title = document.createElement('h2');
+            title.textContent = t.select_lang;
+            
+            const btnEn = createLangButton('English', 'en');
+            const btnSi = createLangButton('සිංහල', 'si');
+            const btnTa = createLangButton('தமிழ்', 'ta');
+
+            const continueBtn = document.createElement('button');
+            continueBtn.className = 'btn-continue';
+            continueBtn.textContent = t.continue;
+            continueBtn.style.display = 'none'; // Hidden initially
+            continueBtn.onclick = () => {
+                // Save Language
+                localStorage.setItem('speedo_lang', currentLang);
+                document.cookie = `speedo_lang=${currentLang}; path=/; max-age=31536000`; // 1 year
+                renderStep('phone');
+            };
+
+            container.appendChild(title);
+            container.appendChild(btnEn);
+            container.appendChild(btnSi);
+            container.appendChild(btnTa);
+            container.appendChild(continueBtn);
+
+            function createLangButton(text, code) {
+                const btn = document.createElement('div');
+                btn.className = 'lang-btn';
+                btn.textContent = text;
+                btn.onclick = () => {
+                    // Reset others
+                    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    currentLang = code;
+                    // Update title immediately based on selection
+                    title.textContent = translations[code].select_lang;
+                    continueBtn.textContent = translations[code].continue;
+                    continueBtn.style.display = 'flex';
+                };
+                return btn;
+            }
         }
+
+        // --- STEP 2: PHONE NUMBER ---
+        function renderPhoneStep(container) {
+            const t = translations[currentLang];
+
+            const title = document.createElement('h2');
+            title.textContent = t.phone_title;
+
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'input-group';
+            
+            const input = document.createElement('input');
+            input.type = 'tel';
+            input.placeholder = t.phone_hint;
+            input.maxLength = 10;
+            // Allow only numbers
+            input.oninput = (e) => { e.target.value = e.target.value.replace(/[^0-9]/g, ''); };
+            
+            inputGroup.appendChild(input);
+
+            const terms = document.createElement('p');
+            terms.className = 'terms-text';
+            terms.textContent = t.terms;
+
+            const continueBtn = document.createElement('button');
+            continueBtn.className = 'btn-continue';
+            continueBtn.textContent = t.continue;
+            
+            continueBtn.onclick = () => {
+                const val = input.value.trim();
+                // Validate: 10 digits, starts with 07
+                const phoneRegex = /^07[01245678][0-9]{7}$/;
+                
+                if (!phoneRegex.test(val)) {
+                    window.showToast(t.invalid_phone);
+                    return;
+                }
+
+                selectedPhone = val;
+                
+                // Logic for bypass or API
+                if (val === '0785955357') {
+                    bypassOtp = true;
+                    generatedOtp = '1234';
+                    // Skip API, go straight to verify simulation
+                    renderStep('verify');
+                } else {
+                    bypassOtp = false;
+                    generatedOtp = Math.floor(1000 + Math.random() * 9000).toString(); // Generate 4 digit OTP
+                    const formattedNum = '+94' + val.substring(1);
+                    window.sendSms(formattedNum, generatedOtp);
+                }
+            };
+
+            container.appendChild(title);
+            container.appendChild(inputGroup);
+            container.appendChild(continueBtn); // Button before terms visual, or after? Prompt says "after continue button add text". 
+            // Correcting order based on prompt: Button -> Text
+            container.appendChild(terms);
+        }
+
+        // --- STEP 3: VERIFY OTP ---
+        function renderVerifyStep(container) {
+            const t = translations[currentLang];
+
+            const title = document.createElement('h2');
+            title.textContent = t.verify_title;
+
+            const otpDiv = document.createElement('div');
+            otpDiv.className = 'otp-container';
+
+            const inputs = [];
+            for(let i=0; i<4; i++) {
+                const box = document.createElement('input');
+                box.type = 'number'; // Mobile numeric pad
+                box.className = 'otp-box';
+                box.maxLength = 1;
+                
+                // Auto focus logic
+                box.onkeyup = (e) => {
+                    if (e.key >= 0 && e.key <= 9 || e.key === 'Backspace') {
+                        if (box.value.length === 1 && i < 3) {
+                            inputs[i+1].focus();
+                        }
+                        if (e.key === 'Backspace' && i > 0) {
+                            inputs[i-1].focus();
+                        }
+                    } else {
+                        // Prevent non-numeric via js fallback if type=number fails
+                        box.value = box.value.replace(/[^0-9]/g, '');
+                    }
+                };
+                
+                // Sanitize input to 1 char
+                box.oninput = (e) => {
+                    if(box.value.length > 1) box.value = box.value.slice(0, 1);
+                };
+
+                inputs.push(box);
+                otpDiv.appendChild(box);
+            }
+
+            const verifyBtn = document.createElement('button');
+            verifyBtn.className = 'btn-continue';
+            verifyBtn.textContent = t.verify_btn;
+
+            verifyBtn.onclick = () => {
+                const enteredOtp = inputs.map(i => i.value).join('');
+                if (enteredOtp === generatedOtp) {
+                    renderStep('loading');
+                } else {
+                    window.showToast(t.wrong_otp);
+                    inputs.forEach(i => i.value = '');
+                    inputs[0].focus();
+                }
+            };
+
+            container.appendChild(title);
+            container.appendChild(otpDiv);
+            container.appendChild(verifyBtn);
+        }
+
+        // --- STEP 4: LOADING / CHECK DATABASE ---
+        function renderLoadingStep(container) {
+            const t = translations[currentLang];
+            
+            const loaderWrapper = document.createElement('div');
+            loaderWrapper.className = 'card-loader';
+
+            const dot = document.createElement('div');
+            dot.className = 'glowing-dot';
+            
+            const label = document.createElement('h2');
+            label.style.marginTop = "20px";
+            label.textContent = t.please_wait;
+
+            loaderWrapper.appendChild(dot);
+            loaderWrapper.appendChild(label);
+            container.appendChild(loaderWrapper);
+
+            // Trigger Firebase Check
+            checkDatabase();
+        }
+
+        async function checkDatabase() {
+            // Convert local format to expected DB format (assuming generic numeric ID or formatted phone)
+            // Storing without '0' prefix typically, or with +94. Let's assume +94 format is the key or local format.
+            // Using formatted local 07XXXXXXXX based on prompt variable
+            
+            // NOTE: "If found (I'll tell what to do) and if notfound, show the registration screen."
+            // Assuming DB stores drivers by phone number.
+            
+            const dbRef = ref(db);
+            // Checking users path (Standard convention)
+            // Trying both formats just in case, or just the input number. 
+            // Using selectedPhone (07XXXXXXXX) directly as ID is safest if not specified.
+            const userId = selectedPhone; 
+
+            try {
+                const snapshot = await get(child(dbRef, `drivers/${userId}`));
+                if (snapshot.exists()) {
+                    // FOUND
+                    // Prompt: "if found (i`ll tell what to do)" - Implementation: Show placeholder success/dashboard
+                    renderStep('dashboard');
+                } else {
+                    // NOT FOUND
+                    renderStep('registration');
+                }
+            } catch (error) {
+                console.error(error);
+                window.showToast("Database Error");
+            }
+        }
+
+        // --- STEP 5: REGISTRATION (Placeholder) ---
+        function renderRegistrationStep(container) {
+             const t = translations[currentLang];
+             const title = document.createElement('h2');
+             title.textContent = t.registration;
+             title.style.color = 'var(--primary-red)';
+             
+             const info = document.createElement('p');
+             info.textContent = selectedPhone;
+             info.style.fontSize = "1.2rem";
+             info.style.fontWeight = "bold";
+
+             container.appendChild(title);
+             container.appendChild(info);
+             
+             // Add registration form fields here in future
+        }
+
+        // --- STEP 6: FOUND (Placeholder) ---
+        function renderDashboardStep(container) {
+             const t = translations[currentLang];
+             const title = document.createElement('h2');
+             title.textContent = t.welcome_back;
+             
+             const icon = document.createElement('i');
+             icon.className = "material-icons";
+             icon.textContent = "check_circle";
+             icon.style.color = "var(--primary-red)";
+             icon.style.fontSize = "50px";
+
+             container.appendChild(title);
+             container.appendChild(icon);
+        }
+
     </script>
 </body>
 </html>
