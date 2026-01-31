@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Speedo Driver Registration</title>
-    <!-- Material Icons -->
+    <title>Speedo Driver</title>
+    <!-- Material Icons CSS -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <!-- Google Fonts for Sinhala and Tamil support -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;700&family=Noto+Sans+Tamil:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
@@ -45,6 +45,7 @@
             justify-content: center;
             align-items: center;
             z-index: 9999;
+            transition: opacity 0.5s ease;
         }
 
         .glowing-dot {
@@ -64,13 +65,14 @@
 
         /* --- MAIN LAYOUT --- */
         #app-container {
-            display: none; /* Hidden until loaded */
+            opacity: 0; /* Hidden initially for fade-in */
+            transition: opacity 0.5s ease;
             position: relative;
             height: 100vh;
             width: 100vw;
         }
 
-        /* Image Section (Top 3/4 approx, gets covered) */
+        /* Image Section */
         .image-container {
             position: absolute;
             top: 0;
@@ -85,15 +87,16 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            display: block;
         }
 
-        /* Bottom Card (Bottom Half) */
+        /* Bottom Card */
         .bottom-card {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 50%; /* Half screen */
+            height: 50%;
             background-color: var(--white);
             border-top-left-radius: var(--radius);
             border-top-right-radius: var(--radius);
@@ -102,16 +105,16 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            /* No shadows as requested */
         }
 
-        /* Content Container for Animations */
+        /* Animation Containers */
         #card-content {
             width: 100%;
             height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
+            /* Ensure smooth transitions */
             transition: transform 0.3s ease, opacity 0.3s ease;
         }
 
@@ -166,7 +169,7 @@
             border: none;
             border-radius: var(--radius);
             font-size: 1rem;
-            margin-top: auto; /* Push to bottom */
+            margin-top: auto; 
             margin-bottom: 10px;
             cursor: pointer;
             display: flex;
@@ -201,7 +204,6 @@
             margin-bottom: 10px;
         }
 
-        /* OTP Input Styles */
         .otp-container {
             display: flex;
             justify-content: space-between;
@@ -240,17 +242,9 @@
             animation: fadein 0.5s, fadeout 0.5s 2.5s;
         }
 
-        @keyframes fadein {
-            from {bottom: 0; opacity: 0;} 
-            to {bottom: 30px; opacity: 1;}
-        }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
 
-        @keyframes fadeout {
-            from {bottom: 30px; opacity: 1;} 
-            to {bottom: 0; opacity: 0;}
-        }
-
-        /* Final Loading State within Card */
         .card-loader {
             display: flex;
             flex-direction: column;
@@ -259,7 +253,6 @@
             height: 100%;
         }
         
-        /* Helper to hide scrollbars on inputs */
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -269,34 +262,34 @@
 </head>
 <body>
 
-    <!-- Loader -->
+    <!-- Initial Loading Screen (Red Dot) -->
     <div id="loader-container">
         <div class="glowing-dot"></div>
     </div>
 
-    <!-- Toast -->
+    <!-- Toast Notification -->
     <div id="toast"></div>
 
-    <!-- App -->
+    <!-- Main App Structure -->
     <div id="app-container">
         <div class="image-container">
-            <!-- Lazy loaded via JS -->
-            <img id="main-bg" alt="Speedo Background">
+            <!-- Image src assigned in JS to ensure loading control -->
+            <img id="main-bg" alt="Background">
         </div>
 
         <div class="bottom-card">
             <div id="card-content">
-                <!-- Dynamic Content Injected Here -->
+                <!-- Dynamic Content -->
             </div>
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
+    <!-- Firebase & Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
         import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
 
-        // Firebase Config
+        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyDeCmIR6QnvCJWRgBYxgLinxwMIOmJfMxc",
             authDomain: "speedo-main.firebaseapp.com",
@@ -311,7 +304,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // --- GLOBAL VARIABLES & STATE ---
+        // --- GLOBAL STATE ---
         let currentLang = 'en';
         let selectedPhone = '';
         let generatedOtp = '';
@@ -331,7 +324,7 @@
                 verify_btn: "Verify",
                 wrong_otp: "Incorrect OTP. Please try again.",
                 please_wait: "Please Wait...",
-                registration: "Registration Form (New User)",
+                registration: "Registration Form",
                 welcome_back: "Welcome Back!"
             },
             si: {
@@ -366,7 +359,7 @@
             }
         };
 
-        // --- UTILS ---
+        // --- UTILITIES ---
         window.showToast = (message) => {
             const x = document.getElementById("toast");
             x.textContent = message;
@@ -374,20 +367,19 @@
             setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
         }
 
-        // --- API SMS FUNCTION ---
+        // --- SMS API ---
         window.sendSms = async (recipient, otp) => {
-            // Recipient format conversion inside main logic, passed here as +94...
             try {
-                // Determine message based on current lang
                 let msg = "";
                 if(currentLang === 'si') {
-                    msg = `ඔබගේ SPEEDO තහවුරු කිරීමේ කේතය ${otp} වේ. කිසිවෙකු සමඟ බෙදා නොගන්න.`;
+                    msg = `ඔබගේ SPEEDO තහවුරු කිරීමේ කේතය ${otp} වේ.`;
                 } else if (currentLang === 'ta') {
-                    msg = `உங்கள் SPEEDO சரிபார்ப்பு குறியீடு ${otp}. யாருடனும் பகிர வேண்டாம்.`;
+                    msg = `உங்கள் SPEEDO சரிபார்ப்பு குறியீடு ${otp}.`;
                 } else {
-                    msg = `Your SPEEDO verification code is ${otp}. Please do not share this with anyone.`;
+                    msg = `Your SPEEDO verification code is ${otp}.`;
                 }
 
+                // Call API
                 await fetch("https://app.text.lk/api/v3/sms/send", {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer 2975|Wz0ile7QSbXVtBMEfs3qrJcFHiz74DOnCkgfnJni36b0e4bc`, 'Content-Type': 'application/json' },
@@ -399,74 +391,109 @@
                 renderStep('verify');
             } catch(e) { 
                 console.error(e); 
-                window.showToast("SMS Error: " + e.message);
+                window.showToast("SMS Failed. Check Console.");
+                // For development safety, still allow verify if API fails? 
+                // Uncomment to bypass on error: renderStep('verify');
             }
         };
 
-        // --- INITIALIZATION ---
-        window.onload = () => {
-            const img = document.getElementById('main-bg');
-            img.onload = () => {
-                // Image loaded, hide loader, show app
-                setTimeout(() => {
-                    document.getElementById('loader-container').style.display = 'none';
-                    document.getElementById('app-container').style.display = 'block';
-                    
-                    // Check local storage for lang
-                    const storedLang = localStorage.getItem('speedo_lang');
-                    if(storedLang) {
-                        currentLang = storedLang;
-                        renderStep('phone');
-                    } else {
-                        renderStep('language');
-                    }
-                }, 1000); // Small buffer
-            };
-            img.loading = "lazy";
-            img.src = "https://i.ibb.co/spSLzC3f/hblj.jpg";
-        };
+        // --- APP STARTUP & PRELOADING ---
+        // This function ensures Font and Image are loaded before hiding the red dot
+        async function initSpeedoApp() {
+            const bgImgUrl = "https://i.ibb.co/spSLzC3f/hblj.jpg";
+            const imgEl = document.getElementById('main-bg');
 
-        // --- RENDER LOGIC ---
+            // 1. Image Load Promise
+            const imageLoadPromise = new Promise((resolve, reject) => {
+                imgEl.onload = () => resolve("Image Loaded");
+                imgEl.onerror = () => resolve("Image Failed"); // Resolve anyway to not block app
+                imgEl.src = bgImgUrl;
+                if (imgEl.complete) resolve("Image Cached");
+            });
+
+            // 2. Font Load Promise (Material Icons)
+            // Forces the browser to fetch the woff2 file now
+            const fontLoadPromise = document.fonts.ready.then(() => {
+                // Specifically check if Material Icons is loaded, or wait for it
+                if (document.fonts.check('1em "Material Icons"')) {
+                    return "Font Loaded";
+                } else {
+                    return document.fonts.load('1em "Material Icons"');
+                }
+            });
+
+            // 3. Safety Timeout (5 seconds max)
+            const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve("Timeout"), 5000));
+
+            // Wait for resources OR timeout
+            await Promise.race([
+                Promise.all([imageLoadPromise, fontLoadPromise]),
+                timeoutPromise
+            ]);
+
+            // Resources ready (or timed out), hide loader
+            const loader = document.getElementById('loader-container');
+            const appContainer = document.getElementById('app-container');
+
+            loader.style.opacity = '0';
+            appContainer.style.display = 'block';
+            
+            // Allow CSS transition to finish before removing loader from DOM
+            setTimeout(() => {
+                loader.style.display = 'none';
+                appContainer.style.opacity = '1';
+                
+                // Initialize View
+                const storedLang = localStorage.getItem('speedo_lang');
+                if(storedLang) {
+                    currentLang = storedLang;
+                    renderStep('phone');
+                } else {
+                    renderStep('language');
+                }
+            }, 500);
+        }
+
+        // Start initialization immediately
+        initSpeedoApp();
+
+
+        // --- UI RENDERER ---
         function renderStep(step) {
             const contentDiv = document.getElementById('card-content');
             
-            // Animation class for transition
+            // Slide out current content
             contentDiv.classList.add('slide-out-left');
 
             setTimeout(() => {
-                contentDiv.innerHTML = ''; // Clear content
+                contentDiv.innerHTML = ''; // Clear
                 contentDiv.classList.remove('slide-out-left');
-                contentDiv.classList.add('slide-in-right');
-
-                if (step === 'language') {
-                    renderLanguageStep(contentDiv);
-                } else if (step === 'phone') {
-                    renderPhoneStep(contentDiv);
-                } else if (step === 'verify') {
-                    renderVerifyStep(contentDiv);
-                } else if (step === 'loading') {
-                    renderLoadingStep(contentDiv);
-                } else if (step === 'registration') {
-                    renderRegistrationStep(contentDiv); // Not found in DB
-                } else if (step === 'dashboard') {
-                     renderDashboardStep(contentDiv); // Found in DB
+                
+                // Render new content
+                switch(step) {
+                    case 'language': renderLanguageStep(contentDiv); break;
+                    case 'phone': renderPhoneStep(contentDiv); break;
+                    case 'verify': renderVerifyStep(contentDiv); break;
+                    case 'loading': renderLoadingStep(contentDiv); break;
+                    case 'registration': renderRegistrationStep(contentDiv); break;
+                    case 'dashboard': renderDashboardStep(contentDiv); break;
                 }
 
-                // Remove animation class after playing
+                // Slide in new content
+                contentDiv.classList.add('slide-in-right');
                 setTimeout(() => {
                     contentDiv.classList.remove('slide-in-right');
                 }, 400);
 
-            }, 300); // Match CSS transition time
+            }, 300);
         }
 
-        // --- STEP 1: LANGUAGE ---
+        // 1. Language Step
         function renderLanguageStep(container) {
-            const t = translations['en']; // Default for title before selection
-            
+            const t = translations['en'];
             const title = document.createElement('h2');
             title.textContent = t.select_lang;
-            
+
             const btnEn = createLangButton('English', 'en');
             const btnSi = createLangButton('සිංහල', 'si');
             const btnTa = createLangButton('தமிழ்', 'ta');
@@ -474,30 +501,23 @@
             const continueBtn = document.createElement('button');
             continueBtn.className = 'btn-continue';
             continueBtn.textContent = t.continue;
-            continueBtn.style.display = 'none'; // Hidden initially
+            continueBtn.style.display = 'none';
             continueBtn.onclick = () => {
-                // Save Language
                 localStorage.setItem('speedo_lang', currentLang);
-                document.cookie = `speedo_lang=${currentLang}; path=/; max-age=31536000`; // 1 year
+                document.cookie = `speedo_lang=${currentLang}; path=/; max-age=31536000`;
                 renderStep('phone');
             };
 
-            container.appendChild(title);
-            container.appendChild(btnEn);
-            container.appendChild(btnSi);
-            container.appendChild(btnTa);
-            container.appendChild(continueBtn);
+            container.append(title, btnEn, btnSi, btnTa, continueBtn);
 
             function createLangButton(text, code) {
                 const btn = document.createElement('div');
                 btn.className = 'lang-btn';
                 btn.textContent = text;
                 btn.onclick = () => {
-                    // Reset others
                     document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
                     btn.classList.add('selected');
                     currentLang = code;
-                    // Update title immediately based on selection
                     title.textContent = translations[code].select_lang;
                     continueBtn.textContent = translations[code].continue;
                     continueBtn.style.display = 'flex';
@@ -506,37 +526,32 @@
             }
         }
 
-        // --- STEP 2: PHONE NUMBER ---
+        // 2. Phone Step
         function renderPhoneStep(container) {
             const t = translations[currentLang];
-
             const title = document.createElement('h2');
             title.textContent = t.phone_title;
 
             const inputGroup = document.createElement('div');
             inputGroup.className = 'input-group';
-            
             const input = document.createElement('input');
             input.type = 'tel';
             input.placeholder = t.phone_hint;
             input.maxLength = 10;
-            // Allow only numbers
-            input.oninput = (e) => { e.target.value = e.target.value.replace(/[^0-9]/g, ''); };
-            
+            input.oninput = (e) => e.target.value = e.target.value.replace(/[^0-9]/g, '');
             inputGroup.appendChild(input);
-
-            const terms = document.createElement('p');
-            terms.className = 'terms-text';
-            terms.textContent = t.terms;
 
             const continueBtn = document.createElement('button');
             continueBtn.className = 'btn-continue';
             continueBtn.textContent = t.continue;
             
+            const terms = document.createElement('p');
+            terms.className = 'terms-text';
+            terms.textContent = t.terms;
+
             continueBtn.onclick = () => {
                 const val = input.value.trim();
-                // Validate: 10 digits, starts with 07
-                const phoneRegex = /^07[01245678][0-9]{7}$/;
+                const phoneRegex = /^07[0-9]{8}$/; // Starts with 07, total 10 digits
                 
                 if (!phoneRegex.test(val)) {
                     window.showToast(t.invalid_phone);
@@ -545,31 +560,24 @@
 
                 selectedPhone = val;
                 
-                // Logic for bypass or API
                 if (val === '0785955357') {
                     bypassOtp = true;
                     generatedOtp = '1234';
-                    // Skip API, go straight to verify simulation
                     renderStep('verify');
                 } else {
                     bypassOtp = false;
-                    generatedOtp = Math.floor(1000 + Math.random() * 9000).toString(); // Generate 4 digit OTP
+                    generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
                     const formattedNum = '+94' + val.substring(1);
                     window.sendSms(formattedNum, generatedOtp);
                 }
             };
 
-            container.appendChild(title);
-            container.appendChild(inputGroup);
-            container.appendChild(continueBtn); // Button before terms visual, or after? Prompt says "after continue button add text". 
-            // Correcting order based on prompt: Button -> Text
-            container.appendChild(terms);
+            container.append(title, inputGroup, continueBtn, terms);
         }
 
-        // --- STEP 3: VERIFY OTP ---
+        // 3. Verify Step
         function renderVerifyStep(container) {
             const t = translations[currentLang];
-
             const title = document.createElement('h2');
             title.textContent = t.verify_title;
 
@@ -579,30 +587,18 @@
             const inputs = [];
             for(let i=0; i<4; i++) {
                 const box = document.createElement('input');
-                box.type = 'number'; // Mobile numeric pad
+                box.type = 'number';
                 box.className = 'otp-box';
-                box.maxLength = 1;
-                
-                // Auto focus logic
+                box.oninput = () => { if(box.value.length > 1) box.value = box.value.slice(0,1); };
                 box.onkeyup = (e) => {
-                    if (e.key >= 0 && e.key <= 9 || e.key === 'Backspace') {
-                        if (box.value.length === 1 && i < 3) {
-                            inputs[i+1].focus();
-                        }
-                        if (e.key === 'Backspace' && i > 0) {
-                            inputs[i-1].focus();
-                        }
-                    } else {
-                        // Prevent non-numeric via js fallback if type=number fails
-                        box.value = box.value.replace(/[^0-9]/g, '');
+                    if ((e.key >= 0 && e.key <= 9) || e.key === 'Backspace') {
+                        if (box.value.length === 1 && i < 3) inputs[i+1].focus();
+                        if (e.key === 'Backspace' && i > 0) inputs[i-1].focus();
+                    } else if (box.value.length === 1 && i < 3) {
+                         // Fallback for mobile tap
+                         inputs[i+1].focus();
                     }
                 };
-                
-                // Sanitize input to 1 char
-                box.oninput = (e) => {
-                    if(box.value.length > 1) box.value = box.value.slice(0, 1);
-                };
-
                 inputs.push(box);
                 otpDiv.appendChild(box);
             }
@@ -622,15 +618,12 @@
                 }
             };
 
-            container.appendChild(title);
-            container.appendChild(otpDiv);
-            container.appendChild(verifyBtn);
+            container.append(title, otpDiv, verifyBtn);
         }
 
-        // --- STEP 4: LOADING / CHECK DATABASE ---
+        // 4. Checking DB Loading
         function renderLoadingStep(container) {
             const t = translations[currentLang];
-            
             const loaderWrapper = document.createElement('div');
             loaderWrapper.className = 'card-loader';
 
@@ -641,45 +634,32 @@
             label.style.marginTop = "20px";
             label.textContent = t.please_wait;
 
-            loaderWrapper.appendChild(dot);
-            loaderWrapper.appendChild(label);
+            loaderWrapper.append(dot, label);
             container.appendChild(loaderWrapper);
 
-            // Trigger Firebase Check
             checkDatabase();
         }
 
         async function checkDatabase() {
-            // Convert local format to expected DB format (assuming generic numeric ID or formatted phone)
-            // Storing without '0' prefix typically, or with +94. Let's assume +94 format is the key or local format.
-            // Using formatted local 07XXXXXXXX based on prompt variable
-            
-            // NOTE: "If found (I'll tell what to do) and if notfound, show the registration screen."
-            // Assuming DB stores drivers by phone number.
-            
+            // Using phone number as key in 'drivers' node
             const dbRef = ref(db);
-            // Checking users path (Standard convention)
-            // Trying both formats just in case, or just the input number. 
-            // Using selectedPhone (07XXXXXXXX) directly as ID is safest if not specified.
             const userId = selectedPhone; 
 
             try {
                 const snapshot = await get(child(dbRef, `drivers/${userId}`));
                 if (snapshot.exists()) {
-                    // FOUND
-                    // Prompt: "if found (i`ll tell what to do)" - Implementation: Show placeholder success/dashboard
                     renderStep('dashboard');
                 } else {
-                    // NOT FOUND
                     renderStep('registration');
                 }
             } catch (error) {
-                console.error(error);
-                window.showToast("Database Error");
+                console.error("DB Error:", error);
+                window.showToast("Connection Error");
+                renderStep('registration'); // Fallback to reg if DB fails? Or retry?
             }
         }
 
-        // --- STEP 5: REGISTRATION (Placeholder) ---
+        // 5. New User Registration
         function renderRegistrationStep(container) {
              const t = translations[currentLang];
              const title = document.createElement('h2');
@@ -688,16 +668,19 @@
              
              const info = document.createElement('p');
              info.textContent = selectedPhone;
-             info.style.fontSize = "1.2rem";
              info.style.fontWeight = "bold";
 
-             container.appendChild(title);
-             container.appendChild(info);
-             
-             // Add registration form fields here in future
+             // Add basic icon to show font is loaded
+             const icon = document.createElement('i');
+             icon.className = "material-icons";
+             icon.textContent = "person_add";
+             icon.style.fontSize = "40px";
+             icon.style.color = "#ccc";
+
+             container.append(icon, title, info);
         }
 
-        // --- STEP 6: FOUND (Placeholder) ---
+        // 6. Existing User Dashboard
         function renderDashboardStep(container) {
              const t = translations[currentLang];
              const title = document.createElement('h2');
@@ -705,12 +688,11 @@
              
              const icon = document.createElement('i');
              icon.className = "material-icons";
-             icon.textContent = "check_circle";
+             icon.textContent = "check_circle"; // This icon is loaded/cached
              icon.style.color = "var(--primary-red)";
-             icon.style.fontSize = "50px";
+             icon.style.fontSize = "60px";
 
-             container.appendChild(title);
-             container.appendChild(icon);
+             container.append(title, icon);
         }
 
     </script>
