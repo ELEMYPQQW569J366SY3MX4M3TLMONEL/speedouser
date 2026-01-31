@@ -4,18 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Speedo Driver</title>
-    <!-- Material Icons CSS -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;700&family=Noto+Sans+Tamil:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
             --primary-red: #ff0000;
+            --primary-red-dark: #cc0000;
             --white: #ffffff;
-            --gray-light: #f0f0f0;
             --text-dark: #333333;
-            --radius: 5px; /* Very small radius */
+            --radius: 5px; 
+            --anim-speed: 0.35s;
         }
 
         * {
@@ -30,7 +29,7 @@
             height: 100%;
             width: 100%;
             background-color: var(--white);
-            overflow: hidden; /* Prevent scrolling on the body */
+            overflow: hidden;
         }
 
         /* --- LOADER --- */
@@ -63,24 +62,22 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-        /* --- MAIN LAYOUT (Flexbox) --- */
+        /* --- LAYOUT --- */
         #app-container {
             opacity: 0;
             transition: opacity 0.5s ease;
             height: 100vh;
             width: 100vw;
             display: flex;
-            flex-direction: column; /* Stack Image on top of Card */
+            flex-direction: column; 
         }
 
-        /* Image Section - Fills remaining space */
         .image-container {
-            flex: 1; /* This makes it take all available space not used by the card */
+            flex: 1; 
             width: 100%;
             position: relative;
             overflow: hidden;
             z-index: 1;
-            min-height: 200px; /* Prevent image from disappearing completely on small screens/keyboard open */
         }
 
         .image-container img {
@@ -90,36 +87,48 @@
             display: block;
         }
 
-        /* Bottom Card - Fits content exactly */
+        /* Bottom Card */
         .bottom-card {
             width: 100%;
-            height: auto; /* Allow height to shrink to content */
             background-color: var(--white);
             border-top-left-radius: var(--radius);
             border-top-right-radius: var(--radius);
             z-index: 10;
-            padding: 25px 25px 35px 25px; /* Extra padding bottom for safe area */
+            padding: 25px 25px 35px 25px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            box-shadow: none; /* No shadow as requested */
+            /* Animation properties for height */
+            height: auto;
+            will-change: height;
+            transition: height var(--anim-speed) cubic-bezier(0.25, 0.8, 0.25, 1);
+            overflow: hidden; /* Necessary to crop content during resize */
         }
 
         #card-content {
             width: 100%;
-            /* No fixed height */
             display: flex;
             flex-direction: column;
             align-items: center;
-            transition: transform 0.3s ease, opacity 0.3s ease;
         }
 
-        .slide-out-left { transform: translateX(-100%); opacity: 0; }
-        .slide-in-right { animation: slideIn 0.4s forwards; }
+        /* Content Animations */
+        .slide-out-left {
+            animation: slideOut var(--anim-speed) forwards;
+        }
+
+        .slide-in-right {
+            animation: slideIn var(--anim-speed) forwards;
+        }
 
         @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
+            from { transform: translateX(50px); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(-50px); opacity: 0; }
         }
 
         /* Typography */
@@ -132,7 +141,7 @@
             font-weight: 700;
         }
 
-        /* Buttons & Inputs */
+        /* BUTTON ANIMATIONS & STYLES */
         .lang-btn {
             width: 100%;
             padding: 12px;
@@ -143,7 +152,14 @@
             font-size: 1rem;
             cursor: pointer;
             text-align: center;
-            transition: 0.2s;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        /* Touch Effect */
+        .lang-btn:active {
+            transform: scale(0.96);
+            background-color: #f5f5f5;
         }
 
         .lang-btn.selected {
@@ -166,12 +182,20 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            transition: all 0.2s ease;
+            user-select: none;
+            box-shadow: 0 4px 6px rgba(255, 0, 0, 0.2);
         }
 
-        .input-group {
-            width: 100%;
-            margin-bottom: 5px;
+        /* Button Touch Animation */
+        .btn-continue:active {
+            transform: scale(0.95);
+            background-color: var(--primary-red-dark);
+            box-shadow: 0 2px 3px rgba(255, 0, 0, 0.2);
         }
+
+        /* Inputs */
+        .input-group { width: 100%; margin-bottom: 5px; }
 
         input[type="tel"], input[type="text"], input[type="number"] {
             width: 100%;
@@ -180,11 +204,10 @@
             border-radius: var(--radius);
             font-size: 1.1rem;
             outline: none;
+            transition: border-color 0.3s;
         }
 
-        input:focus {
-            border-color: var(--primary-red);
-        }
+        input:focus { border-color: var(--primary-red); }
 
         .terms-text {
             font-size: 0.7rem;
@@ -195,7 +218,7 @@
             line-height: 1.3;
         }
 
-        /* OTP Styles */
+        /* OTP */
         .otp-container {
             display: flex;
             justify-content: space-between;
@@ -213,13 +236,15 @@
             border: 1px solid #ccc;
             border-radius: var(--radius);
             background: #fafafa;
+            transition: border-color 0.3s, transform 0.2s;
         }
         
-        .otp-guide-text {
-            font-size: 0.85rem;
-            color: #555;
-            margin-bottom: 5px;
+        .otp-box:focus {
+            border-color: var(--primary-red);
+            transform: translateY(-2px); /* Slight lift on focus */
         }
+        
+        .otp-guide-text { font-size: 0.85rem; color: #555; margin-bottom: 5px; }
 
         .resend-link {
             font-size: 0.85rem;
@@ -227,7 +252,9 @@
             text-decoration: underline;
             margin-top: 15px;
             cursor: pointer;
+            transition: opacity 0.2s;
         }
+        .resend-link:active { opacity: 0.5; }
 
         /* Toast */
         #toast {
@@ -245,16 +272,10 @@
             transform: translateX(-50%);
             font-size: 14px;
         }
-
-        #toast.show {
-            visibility: visible;
-            animation: fadein 0.5s, fadeout 0.5s 2.5s;
-        }
-
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
 
-        /* Loader in card */
         .card-loader {
             display: flex;
             flex-direction: column;
@@ -263,37 +284,29 @@
             padding: 20px 0;
         }
         
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
 <body>
 
-    <!-- Loading Overlay -->
     <div id="loader-container">
         <div class="glowing-dot"></div>
     </div>
 
-    <!-- Toast -->
     <div id="toast"></div>
 
-    <!-- Main App -->
     <div id="app-container">
         <div class="image-container">
             <img id="main-bg" alt="Speedo Background">
         </div>
 
-        <div class="bottom-card">
+        <div class="bottom-card" id="main-card">
             <div id="card-content">
-                <!-- Content injected by JS -->
+                <!-- Injected via JS -->
             </div>
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
         import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
@@ -323,7 +336,7 @@
                 continue: "Continue",
                 phone_title: "Enter your phone number",
                 phone_hint: "e.g., 071XXXXXXX",
-                invalid_phone: "Invalid phone number. Must be 10 digits starting with 07.",
+                invalid_phone: "Invalid phone number.",
                 terms: "By logging in / registering on SPEEDO DRIVER, you agree to our terms and conditions.",
                 otp_sent: "OTP sent successfully.",
                 verify_title: "Verify phone number",
@@ -358,7 +371,7 @@
                 phone_title: "தொலைபேசி எண்ணை உள்ளிடவும்",
                 phone_hint: "எ.கா. 071XXXXXXX",
                 invalid_phone: "தவறான தொலைபேசி எண்.",
-                terms: "SPEEDO DRIVER இல் உள்நுழைவதன் மூலம் விதிகளை ஏற்கிறீர்கள்.",
+                terms: "விதிமுறைகளை ஏற்கிறீர்கள்.",
                 otp_sent: "OTP அனுப்பப்பட்டது.",
                 verify_title: "எண்ணை சரிபார்க்கவும்",
                 verify_btn: "சரிபார்க்கவும்",
@@ -429,14 +442,25 @@
 
         initApp();
 
+        // --- CORE ANIMATION & RENDERING LOGIC ---
+        
         function renderStep(step) {
             const content = document.getElementById('card-content');
+            const card = document.getElementById('main-card');
+            
+            // 1. Lock current height explicitly to prevent jump
+            const startHeight = card.offsetHeight;
+            card.style.height = `${startHeight}px`;
+
+            // 2. Animate out old content
             content.classList.add('slide-out-left');
 
             setTimeout(() => {
+                // 3. Swap Content
                 content.innerHTML = '';
                 content.classList.remove('slide-out-left');
 
+                // Generate new DOM elements
                 switch(step) {
                     case 'language': stepLanguage(content); break;
                     case 'phone': stepPhone(content); break;
@@ -446,8 +470,28 @@
                     case 'registration': stepRegistration(content); break;
                 }
 
+                // 4. Calculate new height
+                // We unlock height briefly to let browser calculate size of new content
+                card.style.height = 'auto';
+                const newHeight = card.offsetHeight;
+                
+                // 5. Restore old height, then animate to new
+                card.style.height = `${startHeight}px`;
+                // Force reflow
+                card.offsetHeight; 
+                
+                // Animate
+                card.style.height = `${newHeight}px`;
+
+                // 6. Animate in new content
                 content.classList.add('slide-in-right');
-                setTimeout(() => content.classList.remove('slide-in-right'), 400);
+
+                // 7. Cleanup after animation
+                setTimeout(() => {
+                    content.classList.remove('slide-in-right');
+                    card.style.height = 'auto'; // Release height
+                }, 350); // Matches CSS transition time
+
             }, 300);
         }
 
@@ -475,12 +519,26 @@
                 b.className = 'lang-btn';
                 b.textContent = txt;
                 b.onclick = () => {
+                    // Manual resize trigger if expanding (showing button)
+                    const card = document.getElementById('main-card');
+                    const startH = card.offsetHeight;
+                    
                     document.querySelectorAll('.lang-btn').forEach(x => x.classList.remove('selected'));
                     b.classList.add('selected');
                     currentLang = code;
                     titleEl.textContent = translations[code].select_lang;
+                    
+                    const wasHidden = cont.style.display === 'none';
                     cont.textContent = translations[code].continue;
                     cont.style.display = 'flex';
+
+                    if(wasHidden) {
+                         // Animate the button appearing
+                         card.style.height = startH + 'px';
+                         card.offsetHeight; // reflow
+                         card.style.height = (startH + 60) + 'px'; // approx button height
+                         setTimeout(() => card.style.height = 'auto', 350);
+                    }
                 };
                 return b;
             }
@@ -586,8 +644,10 @@
 
             const dbRef = ref(db);
             get(child(dbRef, `drivers/${selectedPhone}`)).then((snap) => {
-                if(snap.exists()) renderStep('dashboard');
-                else renderStep('registration');
+                setTimeout(() => { // Force small delay to see animation
+                     if(snap.exists()) renderStep('dashboard');
+                     else renderStep('registration');
+                }, 1000);
             }).catch(() => {
                 window.showToast("DB Error");
                 renderStep('registration'); 
