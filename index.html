@@ -167,14 +167,6 @@
             transition: width 0.4s ease;
         }
 
-        .step-label {
-            position: absolute;
-            top: 40px;
-            font-size: 0.75rem;
-            color: #888;
-            font-weight: bold;
-        }
-
         /* Content Animations */
         .slide-out-left { animation: slideOut var(--anim-speed) forwards; }
         .slide-in-right { animation: slideIn var(--anim-speed) forwards; }
@@ -191,14 +183,6 @@
             font-weight: 700;
         }
         
-        h3 {
-            font-size: 1.1rem;
-            color: #555;
-            align-self: flex-start;
-            margin: 20px 0 10px 0;
-            font-weight: 600;
-        }
-
         /* BUTTONS & INPUTS */
         .lang-btn {
             width: 100%; padding: 12px; margin-bottom: 8px;
@@ -219,14 +203,20 @@
         }
         .btn-continue:active { transform: scale(0.97); }
 
-        .input-group { width: 100%; margin-bottom: 12px; position: relative; }
+        /* INPUT GROUPS - Added margin for spacing */
+        .input-group { 
+            width: 100%; 
+            margin-bottom: 20px; /* SPACE BETWEEN INPUTS */
+            position: relative; 
+        }
         
         label {
             display: block;
-            font-size: 0.85rem;
-            color: #666;
-            margin-bottom: 5px;
+            font-size: 0.9rem;
+            color: #444; /* Darker label */
+            margin-bottom: 8px; /* Space between label and box */
             margin-left: 2px;
+            font-weight: 500;
         }
 
         input, select {
@@ -294,7 +284,7 @@
         .pending-container { text-align: center; padding: 40px 20px; }
         .pending-icon { font-size: 80px; color: #f39c12; margin-bottom: 20px; animation: pulse 2s infinite; }
 
-        /* Toast & OTP Styles (Existing) */
+        /* Toast & OTP Styles */
         .otp-container { display: flex; justify-content: space-between; width: 100%; max-width: 320px; margin: 20px 0; gap: 15px; }
         .otp-box { width: 55px; height: 55px; text-align: center; font-size: 1.5rem; border: 1px solid #ccc; border-radius: var(--radius); background: #fafafa; }
         .otp-box:focus { border-color: var(--primary-red); }
@@ -303,6 +293,15 @@
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+        /* Center the loader on the card */
+        .loading-wrapper {
+            width: 100%;
+            height: 300px; /* Fixed height for centering */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -358,12 +357,7 @@
         let generatedOtp = '';
         let bypassOtp = false;
 
-        // Registration State
-        let regData = {
-            personal: {},
-            vehicle: {},
-            files: {} // base64 strings
-        };
+        let regData = { personal: {}, vehicle: {}, files: {} };
 
         // --- DATA SETS ---
         const provinces = ["Western", "Central", "Southern", "Northern", "Eastern", "North Western", "North Central", "Uva", "Sabaragamuwa"];
@@ -372,7 +366,6 @@
             "Central": ["Kandy", "Matale", "Nuwara Eliya"],
             "Southern": ["Galle", "Matara", "Hambantota"],
             "North Western": ["Kurunegala", "Puttalam"],
-            // Simplified for demo
             "Northern": ["Jaffna", "Kilinochchi", "Mannar"],
             "Eastern": ["Batticaloa", "Ampara", "Trincomalee"],
             "North Central": ["Anuradhapura", "Polonnaruwa"],
@@ -388,7 +381,6 @@
             "Suzuki": ["Alto", "WagonR", "Swift", "Celerio", "Every"],
             "Bajaj": ["RE 4S", "Pulsar", "CT 100", "Platina"],
             "Nissan": ["Sunny", "Leaf", "March", "Dayz"],
-            // Fallback
             "Default": ["Model X", "Model Y", "Standard"]
         };
 
@@ -398,19 +390,15 @@
                 invalid_phone: "Invalid phone number", terms: "By continuing, you agree to our Terms & Conditions.",
                 otp_sent: "OTP Sent!", verify_title: "Verify Phone", verify_btn: "Verify", wrong_otp: "Incorrect OTP",
                 please_wait: "Please Wait...", resend_code: "Resend Code", enter_code_guide: "Enter the 4-digit code",
-                // Registration Step 1
                 reg_title_1: "Personal Details", name_lbl: "Full Name", addr_lbl: "Address", 
                 prov_lbl: "Province", dist_lbl: "District", nic_lbl: "NIC Number", email_lbl: "Email (Optional)",
                 nic_hint: "Old (9+V/X) or New (12 digits)", agree_terms: "I agree to the Terms & Conditions and Privacy Policy.",
-                // Step 2
                 reg_title_2: "Vehicle Details", type_lbl: "Vehicle Type", brand_lbl: "Brand", 
                 model_lbl: "Model", plate_lbl: "Number Plate (ABC-1234)", year_lbl: "Manufactured Year",
-                // Step 3
                 reg_title_3: "Documents & Profile", upload_guide: "Tap to upload. Green means ready.",
                 doc_fv: "Vehicle Front", doc_bv: "Vehicle Back", doc_nic_f: "NIC Front", doc_nic_b: "NIC Back",
                 doc_lic: "License Front", doc_ins: "Insurance", doc_rev: "Revenue Permit",
-                profile_lbl: "Profile Photo (Face only)", register_btn: "Register", processing: "Processing Images...",
-                // Pending
+                profile_lbl: "Profile Photo (Face only)", register_btn: "Register", processing: "Processing...",
                 pending_title: "Pending Approval",
                 pending_msg: "Your application is being reviewed by our team. We will contact you within 2-3 business days.",
                 check_back: "Check back later."
@@ -453,7 +441,6 @@
             }
         };
 
-        // --- UTILS ---
         window.showToast = (message) => {
             const x = document.getElementById("toast");
             x.textContent = message;
@@ -462,13 +449,11 @@
         }
 
         window.sendSms = async (recipient, otp) => {
-            // Simulated SMS for demo stability
             console.log(`Sending SMS to ${recipient}: ${otp}`);
             window.showToast(translations[currentLang].otp_sent);
             renderStep('verify');
         };
 
-        // Image Compression Helper
         const processImage = (file) => {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -477,24 +462,18 @@
                     img.onload = () => {
                         const canvas = document.getElementById('compress-canvas');
                         const ctx = canvas.getContext('2d');
-                        
-                        // Max dimensions
                         const MAX_WIDTH = 800;
                         const MAX_HEIGHT = 800;
                         let width = img.width;
                         let height = img.height;
-
                         if (width > height) {
                             if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
                         } else {
                             if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
                         }
-
                         canvas.width = width;
                         canvas.height = height;
                         ctx.drawImage(img, 0, 0, width, height);
-                        
-                        // Output as JPEG 0.7 quality
                         const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
                         resolve(dataUrl);
                     };
@@ -504,7 +483,6 @@
             });
         };
 
-        // --- APP INIT ---
         async function initApp() {
             const imgEl = document.getElementById('main-bg');
             const bgUrl = "https://i.ibb.co/spSLzC3f/hblj.jpg";
@@ -523,10 +501,8 @@
         }
         initApp();
 
-        // --- NAVIGATION ---
         function renderStep(step) {
             const content = document.getElementById('card-content');
-            const card = document.getElementById('main-card');
             
             content.classList.add('slide-out-left');
 
@@ -551,7 +527,6 @@
             }, 300);
         }
 
-        // --- SIMPLE STEPS ---
         function stepLanguage(div) {
             const t = translations['en'];
             const h2 = document.createElement('h2'); h2.textContent = t.select_lang;
@@ -626,14 +601,15 @@
         }
 
         function stepLoading(div) {
-            div.innerHTML = `<div class="card-loader"><div class="glowing-dot"></div><h2 style="margin-top:20px">${translations[currentLang].please_wait}</h2></div>`;
+            // ONLY THE GLOWING DOT, CENTERED
+            div.innerHTML = `<div class="loading-wrapper"><div class="glowing-dot"></div></div>`;
             const dbRef = ref(db);
             get(child(dbRef, `drivers/${selectedPhone}`)).then((snap) => {
                 setTimeout(() => {
                      if(snap.exists()) {
                          const data = snap.val();
                          if(data.approval_status === 'pending') renderStep('pending');
-                         else renderStep('dashboard'); // Assuming approved or old user
+                         else renderStep('dashboard'); 
                      }
                      else renderStep('reg_step_1');
                 }, 1000);
@@ -677,19 +653,24 @@
                 div.innerHTML = `<h2>${t.reg_title_1}</h2>`;
                 
                 // Name
-                const nameInp = mkInput(t.name_lbl, 'text', regData.personal.name || '');
+                const nameGroup = mkInput(t.name_lbl, 'text', regData.personal.name || '');
+                const nameInp = nameGroup.querySelector('input');
                 nameInp.oninput = (e) => { e.target.classList.toggle('valid', e.target.value.length > 3); regData.personal.name = e.target.value; };
                 
                 // Phone (Readonly)
-                const phoneInp = mkInput(t.phone_title, 'text', selectedPhone, true);
+                const phoneGroup = mkInput(t.phone_title, 'text', selectedPhone, true);
                 
                 // Address
-                const addrInp = mkInput(t.addr_lbl, 'text', regData.personal.address || '');
+                const addrGroup = mkInput(t.addr_lbl, 'text', regData.personal.address || '');
+                const addrInp = addrGroup.querySelector('input');
                 addrInp.oninput = (e) => { e.target.classList.toggle('valid', e.target.value.length > 5); regData.personal.address = e.target.value; };
                 
                 // Province & District
-                const distSel = mkSelect(t.dist_lbl, []);
-                const provSel = mkSelect(t.prov_lbl, provinces);
+                const distGroup = mkSelect(t.dist_lbl, []);
+                const distSel = distGroup.querySelector('select');
+
+                const provGroup = mkSelect(t.prov_lbl, provinces);
+                const provSel = provGroup.querySelector('select');
                 
                 provSel.onchange = (e) => {
                     const p = e.target.value;
@@ -705,7 +686,8 @@
                 distSel.onchange = (e) => { regData.personal.district = e.target.value; distSel.classList.add('valid'); };
 
                 // NIC
-                const nicInp = mkInput(t.nic_lbl, 'text', regData.personal.nic || '');
+                const nicGroup = mkInput(t.nic_lbl, 'text', regData.personal.nic || '');
+                const nicInp = nicGroup.querySelector('input');
                 nicInp.placeholder = t.nic_hint;
                 nicInp.oninput = (e) => {
                     const v = e.target.value.toUpperCase();
@@ -715,7 +697,8 @@
                 };
 
                 // Email
-                const emailInp = mkInput(t.email_lbl, 'email', regData.personal.email || '');
+                const emailGroup = mkInput(t.email_lbl, 'email', regData.personal.email || '');
+                const emailInp = emailGroup.querySelector('input');
                 emailInp.oninput = (e) => regData.personal.email = e.target.value;
 
                 // Terms
@@ -735,17 +718,22 @@
                     renderStep('reg_step_2');
                 };
 
-                div.append(nameInp, phoneInp, addrInp, provSel, distSel, nicInp, emailInp, termsDiv, nextBtn);
+                div.append(nameGroup, phoneGroup, addrGroup, provGroup, distGroup, nicGroup, emailGroup, termsDiv, nextBtn);
             }
 
             if(step === 2) {
                 div.innerHTML = `<h2>${t.reg_title_2}</h2>`;
                 
-                const typeSel = mkSelect(t.type_lbl, vehicleTypes);
+                const typeGroup = mkSelect(t.type_lbl, vehicleTypes);
+                const typeSel = typeGroup.querySelector('select');
                 typeSel.onchange = (e) => { regData.vehicle.type = e.target.value; typeSel.classList.add('valid'); };
 
-                const modelSel = mkSelect(t.model_lbl, []);
-                const brandSel = mkSelect(t.brand_lbl, brands);
+                const modelGroup = mkSelect(t.model_lbl, []);
+                const modelSel = modelGroup.querySelector('select');
+
+                const brandGroup = mkSelect(t.brand_lbl, brands);
+                const brandSel = brandGroup.querySelector('select');
+
                 brandSel.onchange = (e) => {
                     const b = e.target.value;
                     regData.vehicle.brand = b;
@@ -759,17 +747,18 @@
                 };
                 modelSel.onchange = (e) => { regData.vehicle.model = e.target.value; modelSel.classList.add('valid'); };
 
-                const plateInp = mkInput(t.plate_lbl, 'text', regData.vehicle.plate || '');
+                const plateGroup = mkInput(t.plate_lbl, 'text', regData.vehicle.plate || '');
+                const plateInp = plateGroup.querySelector('input');
                 plateInp.oninput = (e) => {
                     const v = e.target.value.toUpperCase();
-                    // Simple Regex for plate
                     e.target.classList.toggle('valid', v.length >= 6);
                     regData.vehicle.plate = v;
                 };
 
                 // Years
                 const years = []; for(let y=1990; y<=2027; y++) years.push(y);
-                const yearSel = mkSelect(t.year_lbl, years);
+                const yearGroup = mkSelect(t.year_lbl, years);
+                const yearSel = yearGroup.querySelector('select');
                 yearSel.onchange = (e) => { regData.vehicle.year = e.target.value; yearSel.classList.add('valid'); };
 
                 const nextBtn = document.createElement('button');
@@ -781,13 +770,12 @@
                     renderStep('reg_step_3');
                 };
 
-                div.append(typeSel, brandSel, modelSel, plateInp, yearSel, nextBtn);
+                div.append(typeGroup, brandGroup, modelGroup, plateGroup, yearGroup, nextBtn);
             }
 
             if(step === 3) {
                 div.innerHTML = `<h2>${t.reg_title_3}</h2><p style="text-align:center;font-size:0.8rem;color:#666;margin-bottom:15px">${t.upload_guide}</p>`;
 
-                // Profile Section
                 const profSec = document.createElement('div'); profSec.className = 'profile-section';
                 const profLbl = document.createElement('label'); profLbl.textContent = t.profile_lbl;
                 const oval = document.createElement('div'); oval.className = 'profile-circle';
@@ -807,7 +795,6 @@
                 profSec.append(profLbl, oval);
                 div.appendChild(profSec);
 
-                // Docs Grid
                 const grid = document.createElement('div'); grid.className = 'doc-grid';
                 const docs = [
                     {k:'v_front', l:t.doc_fv}, {k:'v_back', l:t.doc_bv},
@@ -836,9 +823,8 @@
                 const regBtn = document.createElement('button');
                 regBtn.className = 'btn-continue'; regBtn.textContent = t.register_btn;
                 regBtn.onclick = () => {
-                    if(Object.keys(regData.files).length < 8) { // 7 docs + 1 profile
+                    if(Object.keys(regData.files).length < 8) { 
                         window.showToast("Please upload all documents.");
-                       // return; // Commented out for easier testing, uncomment for prod
                     }
                     
                     regBtn.textContent = t.processing;
@@ -869,7 +855,6 @@
             }
         }
 
-        // Helper: Create Input
         function mkInput(lblTxt, type, val, readOnly=false) {
             const g = document.createElement('div'); g.className = 'input-group';
             const l = document.createElement('label'); l.textContent = lblTxt;
@@ -879,7 +864,6 @@
             return g;
         }
 
-        // Helper: Create Select
         function mkSelect(lblTxt, options) {
             const g = document.createElement('div'); g.className = 'input-group';
             const l = document.createElement('label'); l.textContent = lblTxt;
@@ -890,8 +874,9 @@
                 const opt = document.createElement('option'); opt.value = o; opt.textContent = o;
                 s.appendChild(opt);
             });
-            g.append(l, s);
-            return s;
+            g.appendChild(l); // Append label to group
+            g.appendChild(s); // Append select to group
+            return g; // Return the GROUP (which contains label and select)
         }
 
     </script>
