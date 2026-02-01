@@ -3,23 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Speedo Driver</title>
+    <title>Speedo Driver Partner</title>
+    
+    <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;700&family=Noto+Sans+Tamil:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;500;700&family=Noto+Sans+Tamil:wght@400;500;700&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --primary-red: #d32f2f;
+            /* Brand Colors */
+            --primary-red: #d50000;
             --primary-red-dark: #b71c1c;
-            --success-green: #2e7d32;
-            --warning-gold: #fbc02d;
+            --accent-black: #1a1a1a;
+            
+            /* Status Colors */
+            --success-green: #00c853;
+            --warning-amber: #ffab00;
+            --error-crimson: #d50000;
+            
+            /* UI Colors */
             --white: #ffffff;
-            --text-dark: #212121;
-            --text-light: #757575;
-            --bg-light: #f5f5f5;
-            --radius: 12px; 
-            --anim-speed: 0.4s;
-            --shadow: 0 4px 20px rgba(0,0,0,0.08);
+            --off-white: #f9f9f9;
+            --gray-border: #e0e0e0;
+            --text-main: #212121;
+            --text-sub: #757575;
+            
+            /* Dimensions */
+            --card-radius: 28px; 
+            --input-radius: 12px;
+            --btn-radius: 12px;
         }
 
         * {
@@ -34,293 +46,293 @@
             height: 100%;
             width: 100%;
             background-color: var(--white);
-            overflow: hidden;
-            font-size: 16px;
+            overflow: hidden; /* Prevent body scroll, handle inside elements */
         }
 
-        /* --- FULL SCREEN LOADER --- */
+        /* --- 1. FULL SCREEN LOADER --- */
         #loader-container {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #fff; display: flex; justify-content: center; align-items: center;
-            z-index: 10000; transition: opacity 0.5s ease;
+            flex-direction: column; z-index: 10000; transition: opacity 0.5s ease;
+        }
+
+        .spinner-box {
+            position: relative; width: 80px; height: 80px;
+            display: flex; justify-content: center; align-items: center;
         }
 
         .glowing-dot {
-            width: 70px; height: 70px;
+            width: 60px; height: 60px;
             background-color: var(--primary-red);
             border-radius: 50%;
-            box-shadow: 0 0 25px var(--primary-red), 0 0 50px rgba(211, 47, 47, 0.5);
-            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            box-shadow: 0 0 20px rgba(213, 0, 0, 0.6);
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        .loader-label {
+            margin-top: 25px; font-size: 1rem; color: var(--text-sub);
+            letter-spacing: 1px; font-weight: 500; text-transform: uppercase;
         }
 
         @keyframes pulse {
-            0% { transform: scale(0.85); opacity: 1; }
-            50% { transform: scale(1.15); opacity: 0.6; }
-            100% { transform: scale(0.85); opacity: 1; }
+            0% { transform: scale(0.9); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.5; }
+            100% { transform: scale(0.9); opacity: 1; }
         }
 
-        /* --- MAIN LAYOUT --- */
+        /* --- 2. PROGRESS BAR --- */
+        #reg-progress-bar {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background: rgba(255,255,255,0.95); z-index: 50; display: none; 
+            align-items: center; justify-content: center; backdrop-filter: blur(8px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 0 20px;
+        }
+        .progress-track { width: 100%; max-width: 400px; height: 6px; background: #eee; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary-red), #ff5252); width: 0%; transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+
+        /* --- 3. MAIN LAYOUT (IMAGE + CARD) --- */
         #app-container {
             opacity: 0; transition: opacity 0.6s ease;
             height: 100vh; width: 100vw;
-            display: flex; flex-direction: column; position: relative;
+            display: flex; flex-direction: column;
         }
 
+        /* Fixed Image at Top */
         .image-container { 
-            flex: 1; width: 100%; position: relative; 
-            overflow: hidden; z-index: 1; transition: height 0.5s ease; 
+            height: 45vh; /* Takes top 45% */
+            width: 100%; 
+            position: relative; 
+            z-index: 1; /* Behind card */
+            background-color: #000; /* Fallback */
         }
         
         .image-container.hidden { display: none; }
         
         .image-container img { 
             width: 100%; height: 100%; object-fit: cover; 
-            display: block; animation: zoomBg 20s infinite alternate;
+            opacity: 0.9;
         }
 
-        @keyframes zoomBg { from { transform: scale(1); } to { transform: scale(1.1); } }
-
-        /* --- BOTTOM CARD & FORM --- */
+        /* Card that overlaps the image */
         .bottom-card {
-            width: 100%; background-color: var(--white);
-            border-top-left-radius: 24px; border-top-right-radius: 24px;
-            z-index: 10; padding: 30px 25px;
-            display: flex; flex-direction: column; align-items: center;
-            height: auto; will-change: height;
-            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
-            overflow: hidden; box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+            flex: 1; /* Takes remaining space */
+            background-color: var(--white);
+            margin-top: -40px; /* NEGATIVE MARGIN TO OVERLAP IMAGE */
+            border-top-left-radius: var(--card-radius); 
+            border-top-right-radius: var(--card-radius);
+            z-index: 10; /* Above image */
+            display: flex; flex-direction: column; 
+            position: relative;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.15); /* Shadow to emphasize overlap */
+            overflow: hidden;
         }
 
+        /* Expanded State for Registration/Welcome */
         .bottom-card.expanded { 
-            height: 100vh !important; border-radius: 0; padding: 0; 
-            overflow-y: auto; justify-content: flex-start; 
+            margin-top: 0; 
+            border-radius: 0; 
+            height: 100vh;
         }
 
-        #card-content { width: 100%; display: flex; flex-direction: column; align-items: center; }
-        .expanded #card-content { padding: 80px 20px 50px 20px; max-width: 600px; margin: 0 auto; }
-
-        /* --- PROGRESS BAR --- */
-        #reg-progress-bar {
-            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
-            background: rgba(255,255,255,0.95); z-index: 50; display: none; 
-            align-items: center; justify-content: center; backdrop-filter: blur(5px);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 0 20px;
+        /* Scrollable Content Area */
+        #card-scroll-area {
+            width: 100%; height: 100%;
+            overflow-y: auto; /* Internal scroll */
+            padding: 30px 25px 50px 25px;
+            display: flex; flex-direction: column; align-items: center;
         }
-        .progress-track { width: 100%; max-width: 400px; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary-red), #e53935); width: 33%; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-
-        /* --- ANIMATIONS --- */
-        .slide-out-left { animation: slideOutLeft var(--anim-speed) forwards; }
-        .slide-in-right { animation: slideInRight var(--anim-speed) forwards; }
-        @keyframes slideInRight { from { transform: translateX(60px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes slideOutLeft { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-60px); opacity: 0; } }
-
-        /* --- TYPOGRAPHY & ELEMENTS --- */
-        h2 { font-size: 1.4rem; color: var(--text-dark); text-align: center; margin-bottom: 25px; margin-top: 5px; font-weight: 800; letter-spacing: -0.5px; }
         
-        .lang-btn { 
-            width: 100%; padding: 16px; margin-bottom: 12px; 
-            border: 1px solid #e0e0e0; border-radius: var(--radius); 
-            background: white; font-size: 1.05rem; cursor: pointer; text-align: center; 
-            transition: all 0.2s ease; font-weight: 500;
+        .expanded #card-scroll-area {
+            padding-top: 80px; /* Space for progress bar */
+            max-width: 600px; margin: 0 auto;
         }
-        .lang-btn:active { transform: scale(0.98); background: #f5f5f5; }
-        .lang-btn.selected { border: 2px solid var(--primary-red); color: var(--primary-red); background-color: #ffebee; font-weight: 700; }
+
+        /* --- 4. ANIMATIONS --- */
+        .slide-out-left { animation: slideOutLeft 0.4s forwards; }
+        .slide-in-right { animation: slideInRight 0.4s forwards; }
+        @keyframes slideInRight { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOutLeft { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-50px); opacity: 0; } }
+
+        /* --- 5. UI ELEMENTS --- */
+        h2 { 
+            font-size: 1.5rem; color: var(--accent-black); text-align: center; 
+            margin: 0 0 20px 0; font-weight: 800; letter-spacing: -0.5px; 
+        }
+        
+        p { color: var(--text-sub); line-height: 1.5; margin-bottom: 20px; text-align: center; }
+
+        /* Buttons */
+        .lang-btn { 
+            width: 100%; padding: 18px; margin-bottom: 12px; 
+            border: 1px solid var(--gray-border); border-radius: var(--btn-radius); 
+            background: white; font-size: 1.1rem; cursor: pointer; text-align: center; 
+            font-weight: 500; transition: all 0.2s; position: relative; overflow: hidden;
+        }
+        .lang-btn.selected { 
+            border: 2px solid var(--primary-red); color: var(--primary-red); 
+            background-color: #ffebee; font-weight: 700; 
+        }
         
         .btn-continue { 
             width: 100%; padding: 16px; background-color: var(--primary-red); color: white; 
-            border: none; border-radius: var(--radius); font-size: 1.1rem; margin-top: 30px; 
-            cursor: pointer; display: flex; justify-content: center; align-items: center; 
-            box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3); font-weight: 700; letter-spacing: 0.5px;
-            transition: transform 0.2s;
+            border: none; border-radius: var(--btn-radius); font-size: 1.1rem; margin-top: 25px; 
+            cursor: pointer; font-weight: 700; letter-spacing: 0.5px;
+            box-shadow: 0 6px 20px rgba(213, 0, 0, 0.3); transition: transform 0.2s;
         }
-        .btn-continue:active { transform: scale(0.96); }
+        .btn-continue:active { transform: scale(0.97); }
 
+        /* Inputs */
         .input-group { width: 100%; margin-bottom: 20px; text-align: left; }
-        .input-group label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-light); font-weight: 500; }
+        .input-group label { 
+            display: block; margin-bottom: 8px; font-size: 0.85rem; 
+            color: var(--text-sub); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+        }
         
         input, select { 
-            width: 100%; padding: 15px; border: 1.5px solid #e0e0e0; border-radius: var(--radius); 
-            font-size: 1.05rem; outline: none; background: #fff; transition: border-color 0.3s; 
-            color: var(--text-dark);
+            width: 100%; padding: 16px; border: 1px solid var(--gray-border); border-radius: var(--input-radius); 
+            font-size: 1.1rem; outline: none; background: #fff; color: var(--text-main);
+            transition: border-color 0.3s, box-shadow 0.3s;
         }
-        input:focus, select:focus { border-color: var(--primary-red); }
-        input.valid, select.valid { border-color: var(--success-green); background-color: #f1f8e9; }
-        
-        /* --- WELCOME / APPROVED SCREEN STYLES (DETAILED) --- */
+        input:focus, select:focus { border-color: var(--primary-red); box-shadow: 0 0 0 4px rgba(213, 0, 0, 0.1); }
+        input.valid, select.valid { border-color: var(--success-green); background: #f0fdf4; }
+
+        /* --- 6. WELCOME / APPROVED SCREEN (SCROLLABLE) --- */
         .welcome-wrapper {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: linear-gradient(135deg, #b71c1c 0%, #d32f2f 100%);
-            display: flex; justify-content: center; align-items: center;
-            z-index: 2000; padding: 15px;
+            background: var(--white);
+            z-index: 5000; overflow-y: auto;
         }
 
-        .welcome-card {
-            background: white;
-            width: 100%; max-width: 550px;
-            height: 95vh;
-            border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-            display: flex; flex-direction: column;
-            overflow-y: auto;
-            position: relative;
+        .welcome-hero-section {
+            background: linear-gradient(135deg, #b71c1c 0%, #d50000 100%);
+            color: white; padding: 60px 20px 40px 20px;
+            text-align: center; border-bottom-left-radius: 40px; border-bottom-right-radius: 40px;
+            box-shadow: 0 10px 30px rgba(213, 0, 0, 0.3);
         }
 
-        /* Hide scrollbar for clean look */
-        .welcome-card::-webkit-scrollbar { width: 0px; background: transparent; }
+        .welcome-icon-lg { font-size: 60px; margin-bottom: 15px; color: #fff; }
+        .welcome-title { font-size: 1.8rem; font-weight: 900; margin-bottom: 10px; line-height: 1.2; }
+        .welcome-subtitle { font-size: 1rem; opacity: 0.9; font-weight: 400; max-width: 400px; margin: 0 auto; }
 
-        .welcome-hero {
-            background: #fff;
-            padding: 40px 25px 25px 25px;
-            border-bottom: 1px solid #f0f0f0;
-            text-align: center;
-            position: sticky; top: 0; z-index: 10;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(10px);
+        .welcome-content {
+            padding: 30px 20px; max-width: 600px; margin: 0 auto;
         }
-
-        .welcome-icon { font-size: 70px; color: var(--success-green); margin-bottom: 15px; display: block; }
-        .welcome-header { font-size: 1.5rem; font-weight: 900; color: #111; margin: 0 0 10px 0; line-height: 1.3; }
-        
-        .alert-box {
-            background: #fff3e0; border: 1px solid #ffe0b2;
-            color: #e65100; padding: 12px; border-radius: var(--radius);
-            font-size: 0.85rem; margin-top: 15px; font-weight: 600;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-        }
-
-        .welcome-body { padding: 30px 25px; background: #fafafa; }
 
         .info-card {
-            background: white; border-radius: 16px; padding: 20px;
-            margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-            border: 1px solid #f0f0f0;
+            background: white; border: 1px solid #eee; border-radius: 16px;
+            padding: 25px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);
         }
-
-        .card-title {
-            font-size: 1.1rem; color: #111; font-weight: 800;
-            margin-bottom: 15px; padding-bottom: 10px;
-            border-bottom: 2px solid var(--primary-red);
-            display: inline-block;
-        }
-
-        .highlight-text { font-size: 0.95rem; color: #444; line-height: 1.7; margin-bottom: 15px; }
         
-        /* Financial Box */
-        .finance-box {
-            background: linear-gradient(135deg, #111 0%, #333 100%);
-            color: white; border-radius: 12px; padding: 20px;
-            margin: 15px 0; text-align: center;
+        .section-header {
+            font-size: 1.1rem; font-weight: 800; color: var(--accent-black);
+            margin-bottom: 15px; display: flex; align-items: center; gap: 10px;
         }
-        .finance-price { font-size: 2rem; font-weight: 900; color: #ffeb3b; }
-        .finance-label { font-size: 0.9rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; }
-        .finance-note { font-size: 0.8rem; margin-top: 10px; opacity: 0.7; }
+        .section-header i { color: var(--primary-red); }
 
-        /* Rules List */
-        .rules-list { list-style: none; padding: 0; margin: 0; }
-        .rule-item { 
-            display: flex; gap: 15px; margin-bottom: 15px; align-items: flex-start; 
+        /* Gig Model Highlights */
+        .gig-highlight {
+            background: #fff8e1; border: 1px solid #ffecb3;
+            border-radius: 12px; padding: 15px; margin-bottom: 20px;
+            display: flex; gap: 15px; align-items: center;
         }
-        .rule-icon {
-            width: 32px; height: 32px; background: #ffebee; color: var(--primary-red);
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0; font-size: 18px;
+        .gig-icon { 
+            width: 40px; height: 40px; background: #ffc107; color: #000; 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;
         }
-        .rule-content h4 { margin: 0 0 4px 0; font-size: 0.95rem; font-weight: 700; color: #333; }
-        .rule-content p { margin: 0; font-size: 0.85rem; color: #666; line-height: 1.4; }
 
+        /* Rules */
+        .rule-row { display: flex; gap: 15px; margin-bottom: 20px; }
+        .rule-num { font-size: 1.5rem; font-weight: 900; color: #e0e0e0; line-height: 1; }
+        .rule-text h4 { margin: 0 0 5px 0; font-weight: 700; color: var(--text-main); }
+        .rule-text p { margin: 0; font-size: 0.9rem; color: var(--text-sub); text-align: left; }
+
+        /* Footer */
         .welcome-footer {
-            margin-top: auto; padding: 25px; background: white; border-top: 1px solid #eee; text-align: center;
+            padding: 30px; text-align: center; background: #fafafa; border-top: 1px solid #eee;
         }
-        .welcome-footer a { color: var(--primary-red); text-decoration: none; font-size: 0.85rem; margin: 0 10px; font-weight: 600; text-transform: uppercase; }
+        .welcome-footer a { color: var(--primary-red); text-decoration: none; font-weight: 600; font-size: 0.9rem; margin: 0 10px; }
 
-        /* --- DOC UPLOAD --- */
-        .profile-section { width: 100%; display: flex; flex-direction: column; align-items: center; margin-bottom: 25px; }
-        .profile-circle {
-            width: 140px; height: 140px; 
-            border-radius: 50%; background: #f5f5f5; border: 2px dashed #bdbdbd;
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden; position: relative; cursor: pointer; transition: all 0.3s;
+        /* --- 7. DOC UPLOAD STYLES --- */
+        .doc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; margin-bottom: 25px; }
+        .doc-box {
+            background: #f5f5f5; border: 2px dashed #cfcfcf; border-radius: 12px;
+            height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative; overflow: hidden; transition: all 0.2s;
         }
-        .profile-circle:hover { border-color: var(--primary-red); background: #fff; }
-        .profile-circle.uploaded { border-style: solid; border-color: var(--success-green); }
-        .profile-circle img { width: 100%; height: 100%; object-fit: cover; }
-        .camera-icon { font-size: 40px; color: #bdbdbd; }
+        .doc-box.done { background: #e8f5e9; border: 2px solid var(--success-green); }
+        .doc-box img { width: 100%; height: 100%; object-fit: cover; position: absolute; }
+        .doc-label { font-size: 0.75rem; color: #666; font-weight: 600; text-align: center; z-index: 2; background: rgba(255,255,255,0.8); padding: 2px 6px; border-radius: 4px; }
 
-        .doc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; margin-bottom: 20px; }
-        .doc-card {
-            background: #fff; border: 1px solid #e0e0e0;
-            border-radius: var(--radius); height: 110px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer; position: relative; overflow: hidden;
-            transition: all 0.2s;
+        /* --- 8. TOAST --- */
+        #toast { 
+            visibility: hidden; min-width: 280px; background-color: #212121; color: #fff; 
+            text-align: center; border-radius: 50px; padding: 16px 24px; position: fixed; 
+            z-index: 11000; left: 50%; bottom: 30px; transform: translateX(-50%); 
+            font-size: 0.9rem; box-shadow: 0 5px 20px rgba(0,0,0,0.3);
         }
-        .doc-card:active { transform: scale(0.98); }
-        .doc-card.uploaded { border: 2px solid var(--success-green); background: #f1f8e9; }
-        .doc-card i { font-size: 28px; color: var(--primary-red); margin-bottom: 8px; opacity: 0.7; }
-        .doc-card span { font-size: 0.75rem; color: #555; text-align: center; padding: 0 5px; font-weight: 600; }
-        .doc-card img { width: 100%; height: 100%; object-fit: cover; position: absolute; z-index: 1; }
-        .doc-card-overlay { 
-            position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.6); 
-            color: white; font-size: 0.65rem; padding: 3px; text-align: center; z-index: 2; 
-        }
+        #toast.show { visibility: visible; animation: fadeUp 0.3s, fadeDown 0.3s 2.7s; }
+        @keyframes fadeUp { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeDown { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
 
-        /* --- OTHER STATUS SCREENS --- */
-        .status-container { text-align: center; padding: 60px 20px; width: 100%; }
-        .status-icon { font-size: 100px; margin-bottom: 25px; display: block; }
-        .status-icon.pending { color: var(--warning-gold); animation: pulse 2s infinite; }
-        .status-icon.error { color: var(--primary-red); }
-        .reason-box { 
-            background: #ffebee; border: 1px solid #ffcdd2; color: #b71c1c; 
-            padding: 20px; border-radius: var(--radius); margin: 30px 0; 
-            font-size: 0.95rem; width: 100%; text-align: left; 
-        }
-
-        .otp-container { display: flex; justify-content: center; gap: 12px; margin: 25px 0; }
-        .otp-box { width: 50px; height: 50px; text-align: center; font-size: 1.4rem; border: 2px solid #e0e0e0; border-radius: 10px; background: #fff; color: #333; font-weight: bold; }
-        .otp-box:focus { border-color: var(--primary-red); transform: translateY(-2px); }
-
+        /* Helper Classes */
         .hidden { display: none !important; }
+        .center-text { text-align: center; }
 
-        /* Responsive Text */
-        @media (max-width: 360px) {
-            h2 { font-size: 1.2rem; }
-            .finance-price { font-size: 1.6rem; }
-        }
+        /* Status Screens */
+        .status-wrapper { padding: 40px 20px; text-align: center; }
+        .status-icon-main { font-size: 80px; margin-bottom: 20px; }
+        .status-pending { color: var(--warning-amber); animation: pulse 2s infinite; }
+        .status-error { color: var(--error-crimson); }
+        .status-msg-box { background: #f5f5f5; padding: 20px; border-radius: 12px; margin-top: 20px; text-align: left; }
     </style>
 </head>
 <body>
 
+    <!-- 1. Full Screen Loader -->
     <div id="loader-container">
-        <div class="glowing-dot"></div>
+        <div class="spinner-box">
+            <div class="glowing-dot"></div>
+        </div>
+        <div class="loader-label">Speedo Driver</div>
     </div>
 
+    <!-- 2. Progress Bar -->
     <div id="reg-progress-bar">
         <div class="progress-track">
             <div class="progress-fill" id="progress-fill"></div>
         </div>
     </div>
 
-    <div id="toast" style="visibility:hidden; min-width:250px; background:#333; color:#fff; text-align:center; border-radius:8px; padding:16px; position:fixed; z-index:9999; left:50%; bottom:30px; transform:translateX(-50%); box-shadow:0 4px 12px rgba(0,0,0,0.2);"></div>
+    <!-- 3. Toast Notification -->
+    <div id="toast"></div>
 
+    <!-- 4. Main App Structure -->
     <div id="app-container">
+        
+        <!-- Top Image Section -->
         <div class="image-container" id="top-image">
-            <img id="main-bg" alt="Speedo Background">
+            <!-- Ensure this image URL is valid and high res -->
+            <img src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=2070&auto=format&fit=crop" alt="Speedo Driver Background">
         </div>
 
+        <!-- Overlapping Card Section -->
         <div class="bottom-card" id="main-card">
-            <div id="card-content">
-                <!-- Content Injected via JS -->
+            <div id="card-scroll-area">
+                <!-- Content is injected here dynamically -->
             </div>
         </div>
     </div>
 
+    <!-- Hidden Canvas for Image Compression -->
     <canvas id="compress-canvas" style="display:none;"></canvas>
 
+    <!-- JS Module -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
         import { getDatabase, ref, get, child, set, remove } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
 
+        // --- FIREBASE CONFIGURATION ---
+        // (Using the user provided config)
         const firebaseConfig = {
             apiKey: "AIzaSyDeCmIR6QnvCJWRgBYxgLinxwMIOmJfMxc",
             authDomain: "speedo-main.firebaseapp.com",
@@ -335,15 +347,16 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        // --- STATE VARIABLES ---
         let currentLang = 'en';
         let selectedPhone = '';
         let generatedOtp = '';
-        let bypassOtp = false;
-
         let regData = { personal: {}, vehicle: {}, files: {} };
+
+        // Helper to get Unique User ID
         const getUid = () => `SPEEDO_D_${selectedPhone}`;
 
-        // --- DATA CONSTANTS ---
+        // --- DATA DICTIONARIES ---
         const provinces = ["Western", "Central", "Southern", "Northern", "Eastern", "North Western", "North Central", "Uva", "Sabaragamuwa"];
         const districtMap = {
             "Western": ["Colombo", "Gampaha", "Kalutara"],
@@ -359,172 +372,144 @@
         const vehicleTypes = ["Bike", "Tuk Tuk", "Car", "Mini Car", "Van", "Mini Van"];
         const brands = ["Toyota", "Honda", "Nissan", "Suzuki", "Bajaj", "TVS", "Yamaha", "Kia", "Hyundai", "Micro", "Tata", "Mahindra"];
         const models = { 
-            "Toyota": ["Corolla", "Vitz", "Axio", "Prius", "Allion", "Premio", "Yaris"], 
-            "Honda": ["Civic", "Fit", "Vezel", "Grace", "Insight", "Shuttle"], 
-            "Suzuki": ["Alto", "WagonR", "Swift", "Celerio", "Every", "Spacia"], 
-            "Bajaj": ["RE 4S", "Pulsar", "CT 100", "Platina", "Discover"], 
-            "Nissan": ["Sunny", "Leaf", "March", "Dayz", "NV200"], 
+            "Toyota": ["Corolla", "Vitz", "Axio", "Prius", "Allion", "Premio", "Yaris", "Aqua"], 
+            "Honda": ["Civic", "Fit", "Vezel", "Grace", "Insight", "Shuttle", "WR-V"], 
+            "Suzuki": ["Alto", "WagonR", "Swift", "Celerio", "Every", "Spacia", "Stingray"], 
+            "Bajaj": ["RE 4S", "Pulsar", "CT 100", "Platina", "Discover", "Boxer"], 
+            "Nissan": ["Sunny", "Leaf", "March", "Dayz", "NV200", "Caravan"], 
             "Default": ["Model X", "Model Y", "Standard"] 
         };
 
+        // --- TRANSLATIONS ---
         const translations = {
             en: {
-                select_lang: "Select a language", continue: "Continue", phone_title: "Enter your phone number", phone_hint: "e.g., 071XXXXXXX",
-                invalid_phone: "Invalid phone number", terms: "I agree to the Terms & Conditions and Privacy Policy.",
-                visit_site: "Visit Speedo Website",
-                otp_sent: "OTP Sent!", verify_title: "Verify Phone", verify_btn: "Verify", wrong_otp: "Incorrect OTP",
-                please_wait: "Checking Status...", resend_code: "Resend Code", enter_code_guide: "Enter the 4-digit code sent to your mobile",
+                // Auth & General
+                select_lang: "Select Your Language", 
+                continue: "Continue", 
+                phone_title: "Enter Mobile Number", 
+                phone_hint: "07XXXXXXXX",
+                invalid_phone: "Please enter a valid 10-digit number", 
+                otp_sent: "OTP Sent Successfully", 
+                verify_title: "Verify Your Number", 
+                verify_sub: "We sent a 4-digit code to your phone",
+                verify_btn: "Verify & Proceed", 
+                wrong_otp: "Incorrect Code. Please try again.",
+                resend: "Resend Code",
                 
                 // Registration
-                reg_title_1: "Personal Details", name_lbl: "Full Name", addr_lbl: "Address", 
-                prov_lbl: "Province", dist_lbl: "District", nic_lbl: "NIC Number", email_lbl: "Email (Optional)",
-                nic_hint: "Old (9+V/X) or New (12 digits)", 
-                reg_title_2: "Vehicle Details", type_lbl: "Vehicle Type", brand_lbl: "Brand", 
-                model_lbl: "Model", plate_lbl: "Number Plate (ABC-1234)", year_lbl: "Manufactured Year",
-                reg_title_3: "Docs & Profile", upload_guide: "Tap icons to upload clear photos. Green border means ready.",
-                doc_fv: "Vehicle Front", doc_bv: "Vehicle Back", doc_nic_f: "NIC Front", doc_nic_b: "NIC Back",
-                doc_lic: "License Front", doc_ins: "Insurance", doc_rev: "Revenue Lic",
-                profile_lbl: "Profile Photo (Clear Face)", register_btn: "Submit Application", processing: "Uploading...",
+                step_1_title: "About You",
+                name_lbl: "Full Name",
+                addr_lbl: "Home Address",
+                nic_lbl: "NIC Number",
+                email_lbl: "Email (Optional)",
+                prov_lbl: "Province",
+                dist_lbl: "District",
+                terms_txt: "I agree to Speedo's Terms of Service",
                 
-                // Status & Welcome
-                pending_title: "Application Pending",
-                pending_msg: "Your application has been received. Our team is currently reviewing your documents. You will be notified via SMS once approved (usually within 24-48 hours).",
-                check_back: "You can close the app and check back later.",
+                step_2_title: "Your Vehicle",
+                type_lbl: "Vehicle Type",
+                brand_lbl: "Brand",
+                model_lbl: "Model",
+                plate_lbl: "Plate Number (WP ABC-1234)",
+                year_lbl: "Year of Manufacture",
                 
-                welcome_header: "Welcome to the Speedo Driver Community!",
-                dont_uninstall: "Do NOT uninstall this app. We will notify you via SMS when we launch the service in your area.",
+                step_3_title: "Documents",
+                doc_guide: "Tap squares to upload clear photos",
+                d_pf: "Profile Photo",
+                d_vf: "Vehicle Front",
+                d_vb: "Vehicle Back",
+                d_nf: "NIC Front",
+                d_nb: "NIC Back",
+                d_dl: "Driving License",
+                d_in: "Insurance",
+                d_rl: "Revenue License",
+                submit_btn: "Submit Application",
+                uploading: "Uploading securely...",
                 
-                // Detailed Info
-                about_title: "About Speedo",
-                about_desc: "Speedo is a 'Gig-Based' marketplace. Unlike traditional apps, YOU are the boss here. You create your availability, and passengers choose you based on your profile and rating.",
+                // Status
+                status_pending_t: "Application Pending",
+                status_pending_d: "We are reviewing your details. This usually takes 24 hours. We will SMS you once active.",
+                status_declined_t: "Application Declined",
+                status_retry: "Update & Resubmit",
                 
-                financial_title: "Earnings & Fees",
-                fee_label: "Daily Service Fee",
-                fee_price: "100 LKR",
-                fee_note: "Only pay for days you work. Pay anytime within the month.",
-                zero_comm: "NO COMMISSION. You keep 100% of the fare.",
-                start_cash: "Start with CASH rides immediately.",
-
-                rules_title: "Golden Rules",
-                rule_1_t: "Customer Interaction", rule_1_d: "Greet passengers with a smile. Be polite and confirm the destination.",
-                rule_2_t: "Vehicle Quality", rule_2_d: "Keep your vehicle spotless. A clean car gets more 5-star ratings.",
-                rule_3_t: "Safety First", rule_3_d: "Drive carefully. Follow all traffic rules. Your safety and passenger safety is priority.",
+                // Welcome (Detailed)
+                w_title: "Welcome to Speedo Driver Community!",
+                w_sub: "Important: Do NOT uninstall this app. We will notify you via SMS when service starts in your city.",
                 
-                privacy_link: "Privacy Policy",
-                approval_failed: "Application Declined",
-                try_again: "Reset & Try Again",
-                reason_lbl: "Reason for rejection:",
-                delete_error: "System Error. Please contact support.",
-                registering: "Creating your profile..."
+                sec_1_t: "What is Speedo?",
+                sec_1_d: "Speedo is a 'Gig-Based' platform. Unlike Uber or PickMe, YOU set the price. You negotiate directly with passengers.",
+                
+                sec_2_t: "Why Speedo?",
+                gig_1: "Name Your Price",
+                gig_2: "0% Commission",
+                
+                fee_t: "Simple Pricing",
+                fee_v: "100 LKR",
+                fee_l: "Daily Access Fee",
+                fee_d: "Only pay on days you work. Keep 100% of your ride earnings.",
+                
+                rule_t: "Driver Guidelines",
+                r1_t: "Negotiation", r1_d: "Be fair with your pricing to win more rides.",
+                r2_t: "Hygiene", r2_d: "Clean cars get 5-star ratings and more requests.",
+                r3_t: "Safety", r3_d: "Follow traffic rules. Passenger safety is priority.",
+                
+                links_web: "Visit Website",
+                links_priv: "Privacy Policy"
             },
             si: {
-                select_lang: "භාෂාවක් තෝරන්න", continue: "ඉදිරියට යන්න", phone_title: "දුරකථන අංකය ඇතුළත් කරන්න", phone_hint: "උදා: 071XXXXXXX",
-                invalid_phone: "අවලංගු අංකයකි", terms: "මම නියමයන් සහ කොන්දේසි වලට එකඟ වෙමි.",
-                visit_site: "Speedo වෙබ් අඩවියට පිවිසෙන්න",
-                otp_sent: "OTP යවන ලදි", verify_title: "අංකය තහවුරු කරන්න", verify_btn: "තහවුරු කරන්න", wrong_otp: "වැරදි OTP අංකයකි",
-                please_wait: "රැඳී සිටින්න...", resend_code: "නැවත එවන්න", enter_code_guide: "ඔබගේ දුරකථනයට ලැබුණු අංක 4 කේතය ඇතුලත් කරන්න",
+                select_lang: "භාෂාවක් තෝරන්න", continue: "ඉදිරියට යන්න", phone_title: "දුරකථන අංකය", phone_hint: "07XXXXXXXX",
+                invalid_phone: "නිවැරදි දුරකථන අංකයක් ඇතුළත් කරන්න", otp_sent: "OTP යවන ලදි", verify_title: "අංකය තහවුරු කරන්න",
+                verify_sub: "ඔබේ දුරකථනයට ලැබුණු කේතය ඇතුලත් කරන්න", verify_btn: "තහවුරු කරන්න", wrong_otp: "වැරදි කේතයකි", resend: "නැවත එවන්න",
                 
-                reg_title_1: "පෞද්ගලික විස්තර", name_lbl: "සම්පූර්ණ නම", addr_lbl: "ලිපිනය",
-                prov_lbl: "පළාත", dist_lbl: "දිස්ත්‍රික්කය", nic_lbl: "ජා. හැ. අංකය", email_lbl: "විද්‍යුත් තැපෑල (විකල්ප)",
-                nic_hint: "පැරණි (9V) හෝ නව (12)", 
-                reg_title_2: "වාහන විස්තර", type_lbl: "වාහන වර්ගය", brand_lbl: "වෙළඳ නාමය",
-                model_lbl: "මාදිලිය", plate_lbl: "ලියාපදිංචි අංකය (ABC-1234)", year_lbl: "නිෂ්පාදිත වර්ෂය",
-                reg_title_3: "ලේඛන සහ ඡායාරූප", upload_guide: "පැහැදිලි ඡායාරූප ඇතුලත් කරන්න. කොළ පාටින් පෙනෙන්නේ නම් නිවැරදිය.",
-                doc_fv: "වාහනය ඉදිරිපස", doc_bv: "වාහනය පිටුපස", doc_nic_f: "ජා.හැ. ඉදිරිපස", doc_nic_b: "ජා.හැ. පිටුපස",
-                doc_lic: "රියදුරු බලපත්‍රය", doc_ins: "රක්ෂණ සහතිකය", doc_rev: "ආදායම් බලපත්‍රය",
-                profile_lbl: "ඔබගේ ඡායාරූපය (මුහුණ පෙනෙන)", register_btn: "ලියාපදිංචි වන්න", processing: "සකසමින් පවතී...",
+                step_1_title: "ඔබේ විස්තර", name_lbl: "සම්පූර්ණ නම", addr_lbl: "ලිපිනය", nic_lbl: "ජා. හැ. අංකය", email_lbl: "විද්‍යුත් තැපෑල",
+                prov_lbl: "පළාත", dist_lbl: "දිස්ත්‍රික්කය", terms_txt: "මම නියමයන්ට එකඟ වෙමි",
                 
-                pending_title: "අනුමැතිය අපේක්ෂාවෙන්",
-                pending_msg: "ඔබගේ අයදුම්පත අපට ලැබී ඇත. අපගේ කණ්ඩායම ඔබගේ ලේඛන පරීක්ෂා කරමින් පවතී. අනුමත වූ පසු ඔබට SMS පණිවිඩයක් ලැබෙනු ඇත (පැය 24-48 ඇතුළත).",
-                check_back: "ඔබට දැන් ඇප් එක වසා පසුව පරීක්ෂා කළ හැක.",
+                step_2_title: "වාහන විස්තර", type_lbl: "වර්ගය", brand_lbl: "වෙළඳ නාමය", model_lbl: "මාදිලිය", plate_lbl: "ලියාපදිංචි අංකය", year_lbl: "වර්ෂය",
                 
-                welcome_header: "SPEEDO රියදුරු පවුලට සාදරයෙන් පිළිගනිමු!",
-                dont_uninstall: "මෙම ඇප් එක Uninstall නොකරන්න. ඔබේ ප්‍රදේශයේ සේවාව ආරම්භ කළ වහාම අපි ඔබට SMS මගින් දැනුම් දෙන්නෙමු.",
+                step_3_title: "ලේඛන", doc_guide: "පැහැදිලි ඡායාරූප උඩුගත කරන්න", d_pf: "ඔබේ ඡායාරූපය", d_vf: "වාහනය ඉදිරිපස", d_vb: "වාහනය පිටුපස",
+                d_nf: "ජා.හැ. ඉදිරිපස", d_nb: "ජා.හැ. පිටුපස", d_dl: "රියදුරු බලපත්‍රය", d_in: "රක්ෂණ සහතිකය", d_rl: "ආදායම් බලපත්‍රය",
+                submit_btn: "ලියාපදිංචි වන්න", uploading: "සකසමින් පවතී...",
                 
-                about_title: "Speedo කියන්නේ මොකක්ද?",
-                about_desc: "Speedo කියන්නේ 'Gig-Based' සේවාවක්. වෙනත් ඇප් වගේ නෙමෙයි, මෙතන බොස් ඔයාමයි. ඔයා Online එන වෙලාව ඔයාට තීරණය කරන්න පුළුවන්.",
+                status_pending_t: "අනුමැතිය අපේක්ෂාවෙන්", status_pending_d: "ඔබේ අයදුම්පත පරීක්ෂා කරමින් පවතී. අනුමත වූ පසු අපි ඔබට SMS එවන්නෙමු.",
+                status_declined_t: "ප්‍රතික්ෂේප විය", status_retry: "නැවත උත්සාහ කරන්න",
                 
-                financial_title: "ආදායම් සහ ගාස්තු",
-                fee_label: "දෛනික සේවා ගාස්තුව",
-                fee_price: "රු. 100",
-                fee_note: "වැඩ කරන දවස් වලට විතරයි. මාසෙ ඕනම දවසක ගෙවන්න පුළුවන්.",
-                zero_comm: "කොමිස් අය නොකෙරේ (0%). මුළු මුදලම ඔබට.",
-                start_cash: "Cash හයර් වලින් වැඩ පටන් ගන්න.",
-
-                rules_title: "රන් රීති",
-                rule_1_t: "ගනුදෙනුකරුවන් සමඟ", rule_1_d: "මගීන් සමඟ සුහදව කටයුතු කරන්න. ගමනාන්තය තහවුරු කරගන්න.",
-                rule_2_t: "වාහනයේ තත්ත්වය", rule_2_d: "වාහනය ඉතා පිරිසිදුව තබාගන්න. පිරිසිදු වාහන වලට වැඩි තරු (Ratings) ලැබේ.",
-                rule_3_t: "ආරක්ෂාව", rule_3_d: "පරිස්සමින් රිය පදවන්න. මාර්ග නීති අනුගමනය කරන්න.",
-                
-                privacy_link: "පෞද්ගලිකත්ව ප්‍රතිපත්තිය",
-                approval_failed: "අයදුම්පත ප්‍රතික්ෂේප විය",
-                try_again: "නැවත උත්සාහ කරන්න",
-                reason_lbl: "හේතු:",
-                delete_error: "දෝෂයකි. සහාය අමතන්න.",
-                registering: "Profile එක සාදමින්..."
+                w_title: "SPEEDO පවුලට සාදරයෙන් පිළිගනිමු!", w_sub: "මෙම ඇප් එක ඉවත් (Uninstall) නොකරන්න. සේවාව ආරම්භ කළ විගස අපි ඔබට දැනුම් දෙන්නෙමු.",
+                sec_1_t: "Speedo කියන්නේ මොකක්ද?", sec_1_d: "මෙය 'Gig' සේවාවක්. ගාස්තුව තීරණය කරන්නේ ඔබයි. මගියා සමඟ කෙලින්ම ගනුදෙනු කරන්න.",
+                sec_2_t: "විශේෂත්ව", gig_1: "ඔබේ ගාස්තුව", gig_2: "0% කොමිස්",
+                fee_t: "ගාස්තු ක්‍රමය", fee_v: "රු. 100", fee_l: "දෛනික ගාස්තුව", fee_d: "වැඩ කරන දවස් වලට පමණයි. හයර් එකේ සම්පූර්ණ මුදල ඔබට.",
+                rule_t: "උපදෙස්", r1_t: "ගාස්තු", r1_d: "සාධාරණ ගාස්තු අය කරන්න.", r2_t: "පිරිසිදුකම", r2_d: "වාහනය පිරිසිදුව තබාගන්න.", r3_t: "ආරක්ෂාව", r3_d: "පරිස්සමින් රිය පදවන්න.",
+                links_web: "වෙබ් අඩවිය", links_priv: "රහස්‍යතා ප්‍රතිපත්තිය"
             },
             ta: {
-                select_lang: "மொழியைத் தேர்ந்தெடுக்கவும்", continue: "தொடரவும்", phone_title: "தொலைபேசி எண்", phone_hint: "எ.கா. 071XXXXXXX",
-                invalid_phone: "தவறான எண்", terms: "விதிமுறைகளை ஏற்கிறேன்.",
-                visit_site: "Speedo இணையதளம்",
-                otp_sent: "OTP அனுப்பப்பட்டது", verify_title: "சரிபார்க்கவும்", verify_btn: "சரிபார்க்கவும்", wrong_otp: "தவறான OTP",
-                please_wait: "காத்திருக்கவும்...", resend_code: "மீண்டும் அனுப்பு", enter_code_guide: "4 இலக்க குறியீட்டை உள்ளிடவும்",
+                select_lang: "மொழியைத் தேர்ந்தெடுக்கவும்", continue: "தொடரவும்", phone_title: "தொலைபேசி எண்", phone_hint: "07XXXXXXXX",
+                invalid_phone: "சரியான எண்ணை உள்ளிடவும்", otp_sent: "OTP அனுப்பப்பட்டது", verify_title: "சரிபார்க்கவும்",
+                verify_sub: "குறியீட்டை உள்ளிடவும்", verify_btn: "சரிபார்க்கவும்", wrong_otp: "தவறான குறியீடு", resend: "மீண்டும் அனுப்பு",
                 
-                reg_title_1: "தனிப்பட்ட விவரங்கள்", name_lbl: "முழு பெயர்", addr_lbl: "முகவரி",
-                prov_lbl: "மாகாணம்", dist_lbl: "மாவட்டம்", nic_lbl: "தேசிய அடையாள எண்", email_lbl: "மின்னஞ்சல் (விருப்பத் தேர்வு)",
-                nic_hint: "பழையது (9V) அல்லது புதியது (12)", 
-                reg_title_2: "வாகன விவரங்கள்", type_lbl: "வாகன வகை", brand_lbl: "பிராண்ட்",
-                model_lbl: "மாதிரி", plate_lbl: "எண் பலகை (ABC-1234)", year_lbl: "தயாரிக்கப்பட்ட ஆண்டு",
-                reg_title_3: "ஆவணங்கள்", upload_guide: "தெளிவான புகைப்படங்களை பதிவேற்றவும். பச்சை நிறம் என்றால் தயார்.",
-                doc_fv: "வாகனம் முன்", doc_bv: "வாகனம் பின்", doc_nic_f: "NIC முன்", doc_nic_b: "NIC பின்",
-                doc_lic: "உரிமம்", doc_ins: "காப்பீடு", doc_rev: "வருவாய் அனுமதி",
-                profile_lbl: "சுயவிவரப் படம் (முகம்)", register_btn: "பதிவு செய்யவும்", processing: "பதிவேற்றப்படுகிறது...",
+                step_1_title: "தனிப்பட்ட விவரங்கள்", name_lbl: "முழு பெயர்", addr_lbl: "முகவரி", nic_lbl: "தேசிய அடையாள எண்", email_lbl: "மின்னஞ்சல்",
+                prov_lbl: "மாகாணம்", dist_lbl: "மாவட்டம்", terms_txt: "விதிமுறைகளை ஏற்கிறேன்",
                 
-                pending_title: "விண்ணப்பம் நிலுவையில் உள்ளது",
-                pending_msg: "உங்கள் விண்ணப்பம் பெறப்பட்டது. எங்கள் குழு ஆவணங்களை சரிபார்க்கிறது. ஒப்புதல் அளித்தவுடன் SMS மூலம் அறிவிக்கப்படும்.",
-                check_back: "நீங்கள் செயலியை மூடிவிட்டு பின்னர் பார்க்கலாம்.",
+                step_2_title: "வாகன விவரங்கள்", type_lbl: "வகை", brand_lbl: "பிராண்ட்", model_lbl: "மாதிரி", plate_lbl: "எண் பலகை", year_lbl: "ஆண்டு",
                 
-                welcome_header: "SPEEDO ஓட்டுநர் சமூகத்திற்கு வரவேற்கிறோம்!",
-                dont_uninstall: "இந்த செயலியை நீக்க வேண்டாம். உங்கள் பகுதியில் சேவையைத் தொடங்கும்போது அறிவிப்போம்.",
+                step_3_title: "ஆவணங்கள்", doc_guide: "புகைப்படங்களை பதிவேற்றவும்", d_pf: "சுயவிவரப் படம்", d_vf: "வாகனம் முன்", d_vb: "வாகனம் பின்",
+                d_nf: "NIC முன்", d_nb: "NIC பின்", d_dl: "உரிமம்", d_in: "காப்பீடு", d_rl: "வருவாய் அனுமதி",
+                submit_btn: "பதிவு செய்யவும்", uploading: "பதிவேற்றப்படுகிறது...",
                 
-                about_title: "Speedo பற்றி",
-                about_desc: "Speedo ஒரு 'Gig-Based' சேவையாகும். இங்கே நீங்களே முதலாளி. உங்கள் நேரத்தை நீங்களே முடிவு செய்யலாம்.",
+                status_pending_t: "நிலுவையில் உள்ளது", status_pending_d: "நாங்கள் சரிபார்க்கிறோம். விரைவில் அறிவிப்போம்.",
+                status_declined_t: "நிராகரிக்கப்பட்டது", status_retry: "மீண்டும் முயற்சிக்கவும்",
                 
-                financial_title: "வருமானம் & கட்டணம்",
-                fee_label: "தினசரி சேவைக் கட்டணம்",
-                fee_price: "100 LKR",
-                fee_note: "வேலை செய்யும் நாட்களுக்கு மட்டும். மாதத்தில் எப்போது வேண்டுமானாலும் செலுத்தலாம்.",
-                zero_comm: "கமிஷன் இல்லை (0%). முழு பணமும் உங்களுக்கே.",
-                start_cash: "பண சவாரிகளுடன் (Cash Rides) தொடங்கவும்.",
-
-                rules_title: "முக்கிய விதிகள்",
-                rule_1_t: "பயணிகள் தொடர்பு", rule_1_d: "பயணிகளிடம் கனிவாக நடந்து கொள்ளுங்கள். செல்லுமிடத்தை உறுதிப்படுத்தவும்.",
-                rule_2_t: "வாகன தரம்", rule_2_d: "வாகனத்தை சுத்தமாக வைத்திருக்கவும். சுத்தமான வாகனங்களுக்கு அதிக மதிப்பீடு கிடைக்கும்.",
-                rule_3_t: "பாதுகாப்பு", rule_3_d: "கவனமாக ஓட்டவும். சாலை விதிகளைப் பின்பற்றவும்.",
-                
-                privacy_link: "தனியுரிமைக் கொள்கை",
-                approval_failed: "நிராகரிக்கப்பட்டது",
-                try_again: "மீண்டும் முயற்சிக்கவும்",
-                reason_lbl: "காரணங்கள்:",
-                delete_error: "பிழை. ஆதரவைத் தொடர்பு கொள்ளவும்.",
-                registering: "சுயவிவரம் உருவாக்கப்படுகிறது..."
+                w_title: "SPEEDO வரவேற்கிறோம்!", w_sub: "செயலியை நீக்க வேண்டாம். சேவை தொடங்கும்போது அறிவிப்போம்.",
+                sec_1_t: "Speedo என்றால் என்ன?", sec_1_d: "விலையை நீங்களே தீர்மானிக்கலாம். பயணிகளுடன் நேரடியாக பேசுங்கள்.",
+                sec_2_t: "சிறப்பு", gig_1: "உங்கள் விலை", gig_2: "0% கமிஷன்",
+                fee_t: "கட்டணம்", fee_v: "100 LKR", fee_l: "தினசரி கட்டணம்", fee_d: "முழு வருமானமும் உங்களுக்கே.",
+                rule_t: "விதிகள்", r1_t: "விலை", r1_d: "நியாயமான விலை.", r2_t: "சுத்தம்", r2_d: "வாகனத்தை சுத்தமாக வையுங்கள்.", r3_t: "பாதுகாப்பு", r3_d: "பாதுகாப்பாக ஓட்டவும்.",
+                links_web: "இணையதளம்", links_priv: "தனியுரிமை"
             }
         };
 
-        // --- UTILS ---
-        window.showToast = (msg) => {
-            const x = document.getElementById("toast");
-            x.textContent = msg; x.className = "show";
-            setTimeout(() => x.className = x.className.replace("show", ""), 3000);
-        }
+        // --- CORE FUNCTIONS ---
 
-        window.sendSms = async (recipient, otp) => {
-            console.log(`Sending SMS to ${recipient}: ${otp}`);
-            window.showToast(translations[currentLang].otp_sent);
-            renderStep('verify');
-        };
-
-        const toggleLoader = (show, msg = "") => {
+        // 1. Loader Control
+        const toggleLoader = (show) => {
             const el = document.getElementById('loader-container');
             if(show) {
                 el.style.display = 'flex';
@@ -535,6 +520,42 @@
             }
         };
 
+        // 2. Toast Notification
+        window.showToast = (msg) => {
+            const x = document.getElementById("toast");
+            x.textContent = msg; x.className = "show";
+            setTimeout(() => x.className = x.className.replace("show", ""), 3000);
+        };
+
+        // 3. SMS System (With Fallback for robustness)
+        window.sendSms = async (recipient, otp) => {
+            console.log(`Sending SMS to ${recipient}: ${otp}`);
+            
+            try {
+                // Try sending real SMS
+                const formattedNum = recipient.startsWith('0') ? '94' + recipient.substring(1) : recipient;
+                
+                /* 
+                   NOTE: Text.lk API calls from client-side often fail due to CORS. 
+                   We try it, but catch errors to ensure app flow continues.
+                */
+                await fetch("https://app.text.lk/api/v3/sms/send", {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer 2975|Wz0ile7QSbXVtBMEfs3qrJcFHiz74DOnCkgfnJni36b0e4bc`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ recipient: formattedNum, sender_id: "TextLKDemo", type: "plain", message: `Speedo Code: ${otp}` })
+                });
+                
+                window.showToast(translations[currentLang].otp_sent);
+            } catch (e) {
+                console.warn("SMS API failed (likely CORS or limit). Using fallback.");
+                // FALLBACK: Show OTP in alert so user can proceed testing
+                alert(`SPEEDO DEMO MODE\nSMS Service Unavailable.\nYour OTP is: ${otp}`);
+            }
+            
+            renderStep('verify');
+        };
+
+        // 4. Image Compression
         const processImage = (file) => {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -557,15 +578,14 @@
             });
         };
 
-        // --- INIT ---
+        // --- APP INITIALIZATION ---
         async function initApp() {
-            const imgEl = document.getElementById('main-bg');
-            imgEl.src = "https://i.ibb.co/spSLzC3f/hblj.jpg";
-            
+            // Check Local Storage
             const savedData = localStorage.getItem('speedo_driver_data');
             const savedLang = localStorage.getItem('speedo_lang');
             if(savedLang) currentLang = savedLang;
 
+            // Artificial delay to show loader & init Firebase
             setTimeout(() => {
                 document.getElementById('app-container').style.opacity = '1';
                 
@@ -574,73 +594,102 @@
                         const data = JSON.parse(savedData);
                         selectedPhone = data.phone;
                         
-                        if(data.approval_status === 'approved') renderStep('welcome', data);
-                        else if(data.approval_status === 'declined') renderStep('declined', data);
-                        else renderStep('pending');
-                        
-                        syncStatus();
-                        toggleLoader(false);
+                        // Check Database for Status Updates (Sync)
+                        syncStatus().then(updatedData => {
+                             const d = updatedData || data;
+                             routeUser(d);
+                        });
                     } catch(e) {
                         renderStep('language'); toggleLoader(false);
                     }
                 } else {
-                    if(savedLang) renderStep('phone'); else renderStep('language');
+                    if(savedLang) renderStep('phone');
+                    else renderStep('language');
                     toggleLoader(false);
                 }
-            }, 1000);
+            }, 1200);
         }
-        initApp();
 
-        function syncStatus() {
+        async function syncStatus() {
+            if(!selectedPhone) return null;
             const uid = getUid();
-            get(child(ref(db), `drivers/${uid}`)).then((snap) => {
+            try {
+                const snap = await get(child(ref(db), `drivers/${uid}`));
                 if(snap.exists()) {
                     const data = snap.val();
                     localStorage.setItem('speedo_driver_data', JSON.stringify(data));
+                    return data;
                 }
-            });
+            } catch(e) { console.error("Sync failed", e); }
+            return null;
         }
 
-        // --- NAVIGATION ---
+        function routeUser(data) {
+            if(data.approval_status === 'approved') renderStep('welcome', data);
+            else if(data.approval_status === 'declined') renderStep('declined', data);
+            else renderStep('pending');
+            toggleLoader(false);
+        }
+
+        initApp();
+
+        // --- NAVIGATION & RENDERING ---
         function renderStep(step, data = null) {
-            const content = document.getElementById('card-content');
+            const content = document.getElementById('card-scroll-area');
+            const card = document.getElementById('main-card');
             
-            // Remove Welcome Overlay if exists
-            const existingOverlay = document.querySelector('.welcome-wrapper');
-            if(existingOverlay) existingOverlay.remove();
+            // Remove any existing overlays
+            const overlay = document.querySelector('.welcome-wrapper');
+            if(overlay) overlay.remove();
 
+            // Handle Full Screen Modes
             if(step === 'welcome') { stepWelcome(data); return; }
+            
+            // Registration Mode layout
+            if(step.startsWith('reg_')) {
+                card.classList.add('expanded');
+                document.getElementById('top-image').classList.add('hidden');
+            } else {
+                card.classList.remove('expanded');
+                document.getElementById('top-image').classList.remove('hidden');
+            }
 
+            // Slide Animation
             content.classList.add('slide-out-left');
             setTimeout(() => {
                 content.innerHTML = '';
                 content.classList.remove('slide-out-left');
+                
                 switch(step) {
                     case 'language': stepLanguage(content); break;
                     case 'phone': stepPhone(content); break;
                     case 'verify': stepVerify(content); break;
-                    case 'loading': stepLoading(content); break; 
+                    case 'loading': stepLoading(content); break;
                     case 'pending': stepPending(content); break;
                     case 'declined': stepDeclined(content, data); break;
                     case 'reg_step_1': startRegistration(content, 1); break;
                     case 'reg_step_2': startRegistration(content, 2); break;
                     case 'reg_step_3': startRegistration(content, 3); break;
                 }
+                
                 content.classList.add('slide-in-right');
                 setTimeout(() => content.classList.remove('slide-in-right'), 350);
             }, 300);
         }
 
-        // --- STEPS ---
+        // --- STEP 1: LANGUAGE ---
         function stepLanguage(div) {
             const t = translations['en'];
             div.innerHTML = `<h2>${t.select_lang}</h2>`;
-            const btnEn = mkBtn('English', 'en');
-            const btnSi = mkBtn('සිංහල', 'si');
-            const btnTa = mkBtn('தமிழ்', 'ta');
+            
+            const btnEn = mkBtn('English (US)', 'en');
+            const btnSi = mkBtn('සිංහල (Sinhala)', 'si');
+            const btnTa = mkBtn('தமிழ் (Tamil)', 'ta');
+            
             const cont = document.createElement('button');
             cont.className = 'btn-continue'; cont.textContent = t.continue; cont.style.display = 'none';
             cont.onclick = () => { localStorage.setItem('speedo_lang', currentLang); renderStep('phone'); };
+            
             div.append(btnEn, btnSi, btnTa, cont);
 
             function mkBtn(txt, code) {
@@ -655,68 +704,293 @@
             }
         }
 
+        // --- STEP 2: PHONE INPUT ---
         function stepPhone(div) {
             const t = translations[currentLang];
             div.innerHTML = `<h2>${t.phone_title}</h2>`;
+            
             const grp = mkInput(t.phone_title, 'tel', '', false);
-            const inp = grp.querySelector('input'); inp.placeholder = t.phone_hint; inp.maxLength = 10;
+            const inp = grp.querySelector('input'); 
+            inp.placeholder = t.phone_hint; inp.maxLength = 10;
             inp.oninput = (e) => e.target.value = e.target.value.replace(/[^0-9]/g, '');
-            const btn = document.createElement('button'); btn.className = 'btn-continue'; btn.textContent = t.continue;
+            
+            const btn = document.createElement('button'); 
+            btn.className = 'btn-continue'; btn.textContent = t.continue;
+            
             btn.onclick = () => {
                 const v = inp.value.trim();
                 if(!/^07[0-9]{8}$/.test(v)) return window.showToast(t.invalid_phone);
+                
                 selectedPhone = v;
-                if(v === '0785955357') { bypassOtp = true; generatedOtp = '1234'; renderStep('verify'); }
-                else {
-                    bypassOtp = false; generatedOtp = Math.floor(1000 + Math.random()*9000).toString();
-                    window.sendSms('+94'+v.substring(1), generatedOtp);
-                }
+                // Demo bypass for specific number, else Generate random OTP
+                if(v === '0785955357') { bypassOtp = true; generatedOtp = '1234'; }
+                else { bypassOtp = false; generatedOtp = Math.floor(1000 + Math.random()*9000).toString(); }
+                
+                window.sendSms(selectedPhone, generatedOtp);
             };
+            
             div.append(grp, btn);
         }
 
+        // --- STEP 3: VERIFY OTP ---
         function stepVerify(div) {
             const t = translations[currentLang];
-            div.innerHTML = `<h2>${t.verify_title}</h2><p class="highlight-text" style="text-align:center">${t.enter_code_guide}</p>`;
-            const boxCont = document.createElement('div'); boxCont.className = 'otp-container';
+            div.innerHTML = `<h2>${t.verify_title}</h2><p>${t.verify_sub} <b>${selectedPhone}</b></p>`;
+            
+            const boxCont = document.createElement('div'); 
+            boxCont.style.cssText = "display:flex; gap:12px; margin:20px 0; justify-content:center;";
+            
             const inputs = [];
             for(let i=0; i<4; i++){
-                const b = document.createElement('input'); b.type='number'; b.className='otp-box';
-                b.oninput = () => { if(b.value.length>1) b.value=b.value[0]; if(b.value && i<3) inputs[i+1].focus(); };
+                const b = document.createElement('input'); 
+                b.type='tel'; b.maxLength=1; 
+                b.style.cssText = "width:50px; height:50px; text-align:center; font-size:1.5rem; border-radius:12px; border:2px solid #ddd;";
+                
+                b.oninput = (e) => { 
+                    if(b.value.length >= 1) { 
+                        if(i < 3) inputs[i+1].focus(); 
+                        else btn.click(); // Auto submit on last digit
+                    }
+                };
                 b.onkeydown = (e) => { if(e.key==='Backspace' && !b.value && i>0) inputs[i-1].focus(); };
                 inputs.push(b); boxCont.appendChild(b);
             }
-            const btn = document.createElement('button'); btn.className = 'btn-continue'; btn.textContent = t.verify_btn;
-            const resend = document.createElement('div'); resend.className = 'resend-link'; resend.textContent = t.resend_code; resend.style.textAlign = 'center'; resend.style.marginTop = '15px'; resend.style.color = 'var(--primary-red)'; resend.style.textDecoration='underline'; resend.style.cursor='pointer';
-            resend.onclick = () => { generatedOtp = Math.floor(1000 + Math.random()*9000).toString(); window.sendSms('+94'+selectedPhone.substring(1), generatedOtp); };
+            
+            const btn = document.createElement('button'); 
+            btn.className = 'btn-continue'; btn.textContent = t.verify_btn;
+            
+            const resend = document.createElement('div'); 
+            resend.textContent = t.resend; 
+            resend.style.cssText = "margin-top:20px; color:var(--primary-red); font-weight:600; cursor:pointer;";
+            resend.onclick = () => { 
+                generatedOtp = Math.floor(1000 + Math.random()*9000).toString(); 
+                window.sendSms(selectedPhone, generatedOtp); 
+            };
 
             btn.onclick = () => {
-                if(inputs.map(x=>x.value).join('') === generatedOtp) renderStep('loading');
+                const entered = inputs.map(x=>x.value).join('');
+                if(entered === generatedOtp) renderStep('loading');
                 else { window.showToast(t.wrong_otp); inputs.forEach(x=>x.value=''); inputs[0].focus(); }
             };
+            
             div.append(boxCont, btn, resend);
+            setTimeout(()=>inputs[0].focus(), 500);
         }
 
+        // --- CHECK DB STATUS ---
         function stepLoading(div) {
-            // Background check
-            div.innerHTML = `<div style="text-align:center; padding:50px;"><div class="glowing-dot" style="margin:0 auto;"></div><h3 style="margin-top:30px;color:#555;">${translations[currentLang].please_wait}</h3></div>`;
+            div.innerHTML = `<div style="padding:40px; text-align:center;"><div class="glowing-dot" style="margin:0 auto"></div><p style="margin-top:30px">${translations[currentLang].please_wait}</p></div>`;
+            
             const dbRef = ref(db);
             const uid = getUid();
+            
             get(child(dbRef, `drivers/${uid}`)).then((snap) => {
                 setTimeout(() => {
                      if(snap.exists()) {
                          const data = snap.val();
                          localStorage.setItem('speedo_driver_data', JSON.stringify(data));
-                         if(data.approval_status === 'approved') renderStep('welcome', data);
-                         else if (data.approval_status === 'declined') renderStep('declined', data);
-                         else renderStep('pending');
+                         routeUser(data);
                      }
                      else renderStep('reg_step_1');
-                }, 1500);
-            }).catch(() => { window.showToast("Connection Error"); renderStep('reg_step_1'); });
+                }, 1000);
+            }).catch(() => { window.showToast("Connection Failed"); renderStep('reg_step_1'); });
         }
 
-        // --- FULL SCREEN WELCOME / APPROVED ---
+        // --- REGISTRATION FORM ---
+        function updateProgressBar(step) {
+            const bar = document.getElementById('reg-progress-bar');
+            bar.style.display = 'flex';
+            document.getElementById('progress-fill').style.width = (step * 33.33) + '%';
+        }
+
+        function startRegistration(div, step) {
+            updateProgressBar(step);
+            const t = translations[currentLang];
+
+            // STEP 1: PERSONAL
+            if(step === 1) {
+                div.innerHTML = `<h2>${t.step_1_title}</h2>`;
+                const n = mkInput(t.name_lbl, 'text', regData.personal.name);
+                const a = mkInput(t.addr_lbl, 'text', regData.personal.address);
+                const nic = mkInput(t.nic_lbl, 'text', regData.personal.nic);
+                const em = mkInput(t.email_lbl, 'email', regData.personal.email);
+                
+                const provSel = mkSelect(t.prov_lbl, provinces);
+                const distSel = mkSelect(t.dist_lbl, []);
+                
+                // Logic
+                n.querySelector('input').oninput = (e) => regData.personal.name = e.target.value;
+                a.querySelector('input').oninput = (e) => regData.personal.address = e.target.value;
+                nic.querySelector('input').oninput = (e) => regData.personal.nic = e.target.value.toUpperCase();
+                em.querySelector('input').oninput = (e) => regData.personal.email = e.target.value;
+                
+                provSel.querySelector('select').onchange = (e) => {
+                    const p = e.target.value; regData.personal.province = p;
+                    const ds = distSel.querySelector('select'); ds.innerHTML = '<option value="" disabled selected>Select</option>';
+                    if(districtMap[p]) districtMap[p].forEach(d => ds.innerHTML+=`<option value="${d}">${d}</option>`);
+                };
+                distSel.querySelector('select').onchange = (e) => regData.personal.district = e.target.value;
+
+                // Terms Checkbox
+                const termBox = document.createElement('div');
+                termBox.style.cssText = "display:flex; gap:10px; margin-top:10px; padding:15px; background:#f5f5f5; border-radius:12px;";
+                termBox.innerHTML = `<input type="checkbox" id="termChk" style="width:20px;height:20px;"> <label for="termChk" style="font-size:0.9rem; color:#555;">${t.terms_txt}</label>`;
+                
+                const btn = document.createElement('button'); btn.className = 'btn-continue'; btn.textContent = t.continue;
+                btn.onclick = () => {
+                    if(!regData.personal.name || !regData.personal.nic || !document.getElementById('termChk').checked) {
+                        window.showToast("Please fill details and accept terms"); return;
+                    }
+                    renderStep('reg_step_2');
+                };
+                div.append(n, a, nic, em, provSel, distSel, termBox, btn);
+            }
+
+            // STEP 2: VEHICLE
+            if(step === 2) {
+                div.innerHTML = `<h2>${t.step_2_title}</h2>`;
+                const typeS = mkSelect(t.type_lbl, vehicleTypes);
+                const brandS = mkSelect(t.brand_lbl, brands);
+                const modelS = mkSelect(t.model_lbl, []);
+                const plate = mkInput(t.plate_lbl, 'text', regData.vehicle.plate);
+                
+                const years = []; for(let y=1995; y<=2026; y++) years.push(y);
+                const yearS = mkSelect(t.year_lbl, years);
+
+                typeS.querySelector('select').onchange = (e) => regData.vehicle.type = e.target.value;
+                
+                brandS.querySelector('select').onchange = (e) => {
+                    regData.vehicle.brand = e.target.value;
+                    const ms = modelS.querySelector('select'); ms.innerHTML = '<option value="" disabled selected>Select</option>';
+                    (models[e.target.value] || models['Default']).forEach(m => ms.innerHTML+=`<option value="${m}">${m}</option>`);
+                };
+                modelS.querySelector('select').onchange = (e) => regData.vehicle.model = e.target.value;
+                yearS.querySelector('select').onchange = (e) => regData.vehicle.year = e.target.value;
+                plate.querySelector('input').oninput = (e) => regData.vehicle.plate = e.target.value.toUpperCase();
+
+                const btn = document.createElement('button'); btn.className = 'btn-continue'; btn.textContent = t.continue;
+                btn.onclick = () => {
+                    if(!regData.vehicle.type || !regData.vehicle.brand || !regData.vehicle.plate) {
+                        window.showToast("Please complete vehicle details"); return;
+                    }
+                    renderStep('reg_step_3');
+                };
+                div.append(typeS, brandS, modelS, plate, yearS, btn);
+            }
+
+            // STEP 3: DOCS
+            if(step === 3) {
+                div.innerHTML = `<h2>${t.step_3_title}</h2><p>${t.doc_guide}</p>`;
+                
+                // Profile
+                const profDiv = document.createElement('div'); profDiv.className = 'profile-section';
+                profDiv.innerHTML = `<label style="margin-bottom:10px; font-weight:600;">${t.d_pf}</label><div class="profile-circle" id="upl-profile"><i class="material-icons camera-icon">camera_alt</i></div>`;
+                div.appendChild(profDiv);
+                
+                setupUpload(profDiv.querySelector('#upl-profile'), 'profile');
+
+                // Grid
+                const grid = document.createElement('div'); grid.className = 'doc-grid';
+                const list = [
+                    {k:'v_front', l:t.d_vf}, {k:'v_back', l:t.d_vb}, 
+                    {k:'nic_f', l:t.d_nf}, {k:'nic_b', l:t.d_nb}, 
+                    {k:'license', l:t.d_dl}, {k:'ins', l:t.d_in}, {k:'rev', l:t.d_rl}
+                ];
+
+                list.forEach(item => {
+                    const box = document.createElement('div'); box.className = 'doc-box';
+                    box.id = `upl-${item.k}`;
+                    box.innerHTML = `<i class="material-icons">add_a_photo</i><div class="doc-label">${item.l}</div>`;
+                    grid.appendChild(box);
+                    setupUpload(box, item.k);
+                });
+                div.appendChild(grid);
+
+                const btn = document.createElement('button'); btn.className = 'btn-continue'; btn.textContent = t.submit_btn;
+                btn.onclick = submitRegistration;
+                div.appendChild(btn);
+            }
+
+            function setupUpload(el, key) {
+                const inp = document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.hidden=true;
+                el.appendChild(inp);
+                el.onclick = () => inp.click();
+                inp.onchange = async (e) => {
+                    if(e.target.files[0]) {
+                        el.innerHTML = '<div class="glowing-dot" style="width:20px;height:20px;"></div>'; // Mini loader
+                        const b64 = await processImage(e.target.files[0]);
+                        regData.files[key] = b64;
+                        el.innerHTML = `<img src="${b64}">`;
+                        el.classList.add('done');
+                    }
+                }
+            }
+        }
+
+        async function submitRegistration() {
+            // Check docs (Require at least profile + 1 doc for demo, usually all)
+            if(!regData.files.profile) return window.showToast("Profile Photo Required");
+
+            toggleLoader(true);
+            const t = translations[currentLang];
+            const uid = getUid();
+            
+            const finalData = {
+                phone: selectedPhone,
+                uid: uid,
+                personal: regData.personal,
+                vehicle: regData.vehicle,
+                documents: regData.files,
+                approval_status: 'pending',
+                registered_at: new Date().toISOString()
+            };
+
+            try {
+                await set(ref(db, `drivers/${uid}`), finalData);
+                localStorage.setItem('speedo_driver_data', JSON.stringify(finalData));
+                toggleLoader(false);
+                renderStep('pending');
+            } catch(e) {
+                console.error(e);
+                toggleLoader(false);
+                window.showToast("Submission Error. Try again.");
+            }
+        }
+
+        // --- STATUS SCREENS ---
+        function stepPending(div) {
+            const t = translations[currentLang];
+            div.innerHTML = `
+                <div class="status-wrapper">
+                    <i class="material-icons status-icon-main status-pending">hourglass_full</i>
+                    <h2>${t.status_pending_t}</h2>
+                    <p>${t.status_pending_d}</p>
+                    <button class="btn-continue" style="background:#757575;" onclick="location.reload()">Refresh Status</button>
+                </div>
+            `;
+        }
+
+        function stepDeclined(div, data) {
+            const t = translations[currentLang];
+            div.innerHTML = `
+                <div class="status-wrapper">
+                    <i class="material-icons status-icon-main status-error">highlight_off</i>
+                    <h2>${t.status_declined_t}</h2>
+                    <div class="status-msg-box">
+                        <strong>${t.reason_lbl}</strong>
+                        <p>${data.reasons || "Verification Failed"}</p>
+                    </div>
+                    <button class="btn-continue" id="resetBtn">${t.status_retry}</button>
+                </div>
+            `;
+            document.getElementById('resetBtn').onclick = () => {
+                const uid = getUid();
+                remove(ref(db, `drivers/${uid}`));
+                localStorage.removeItem('speedo_driver_data');
+                location.reload();
+            };
+        }
+
         function stepWelcome(data) {
             const t = translations[currentLang];
             const overlay = document.createElement('div');
@@ -724,243 +998,80 @@
             
             overlay.innerHTML = `
                 <div class="welcome-card">
-                    <div class="welcome-hero">
-                        <i class="material-icons welcome-icon">check_circle</i>
-                        <h1 class="welcome-header">${t.welcome_header}</h1>
-                        <div class="alert-box">
-                             <i class="material-icons">notifications_active</i> ${t.dont_uninstall}
-                        </div>
+                    <div class="welcome-hero-section">
+                        <i class="material-icons welcome-icon-lg">check_circle</i>
+                        <div class="welcome-title">${t.w_title}</div>
+                        <div class="welcome-subtitle">${t.w_sub}</div>
                     </div>
                     
-                    <div class="welcome-body">
-                        <!-- About -->
+                    <div class="welcome-content">
+                        
+                        <!-- What is Speedo -->
                         <div class="info-card">
-                            <div class="card-title">${t.about_title}</div>
-                            <div class="highlight-text">${t.about_desc}</div>
+                            <div class="section-header"><i class="material-icons">info</i> ${t.sec_1_t}</div>
+                            <p>${t.sec_1_d}</p>
+                        </div>
+
+                        <!-- Highlights -->
+                        <div class="gig-highlight">
+                            <div class="gig-icon"><i class="material-icons">sell</i></div>
+                            <div><strong>${t.gig_1}</strong></div>
+                        </div>
+                        <div class="gig-highlight">
+                            <div class="gig-icon"><i class="material-icons">percent</i></div>
+                            <div><strong>${t.gig_2}</strong></div>
                         </div>
 
                         <!-- Financials -->
-                        <div class="info-card" style="border-left:5px solid #ffeb3b">
-                            <div class="card-title">${t.financial_title}</div>
-                            
-                            <div class="finance-box">
-                                <div class="finance-label">${t.fee_label}</div>
-                                <div class="finance-price">${t.fee_price}</div>
-                                <div class="finance-note">${t.fee_note}</div>
+                        <div class="info-card" style="border-left: 5px solid #ffab00;">
+                            <div class="section-header"><i class="material-icons">payments</i> ${t.fee_t}</div>
+                            <div style="text-align:center; padding:10px 0;">
+                                <div style="font-size:2.5rem; font-weight:900; color:#212121;">${t.fee_v}</div>
+                                <div style="text-transform:uppercase; font-size:0.8rem; color:#757575; letter-spacing:1px;">${t.fee_l}</div>
                             </div>
-
-                            <ul class="rules-list">
-                                <li class="rule-item">
-                                    <div class="rule-icon"><i class="material-icons">percent</i></div>
-                                    <div class="rule-content"><h4>0% Commission</h4><p>${t.zero_comm}</p></div>
-                                </li>
-                                <li class="rule-item">
-                                    <div class="rule-icon"><i class="material-icons">payments</i></div>
-                                    <div class="rule-content"><h4>Cash Payments</h4><p>${t.start_cash}</p></div>
-                                </li>
-                            </ul>
+                            <p style="text-align:center; margin-top:10px; font-size:0.9rem;">${t.fee_d}</p>
                         </div>
 
-                        <!-- Golden Rules -->
+                        <!-- Rules -->
                         <div class="info-card">
-                            <div class="card-title">${t.rules_title}</div>
-                            <ul class="rules-list">
-                                <li class="rule-item">
-                                    <div class="rule-icon"><i class="material-icons">sentiment_satisfied_alt</i></div>
-                                    <div class="rule-content">
-                                        <h4>${t.rule_1_t}</h4>
-                                        <p>${t.rule_1_d}</p>
-                                    </div>
-                                </li>
-                                <li class="rule-item">
-                                    <div class="rule-icon"><i class="material-icons">cleaning_services</i></div>
-                                    <div class="rule-content">
-                                        <h4>${t.rule_2_t}</h4>
-                                        <p>${t.rule_2_d}</p>
-                                    </div>
-                                </li>
-                                <li class="rule-item">
-                                    <div class="rule-icon"><i class="material-icons">health_and_safety</i></div>
-                                    <div class="rule-content">
-                                        <h4>${t.rule_3_t}</h4>
-                                        <p>${t.rule_3_d}</p>
-                                    </div>
-                                </li>
-                            </ul>
+                            <div class="section-header"><i class="material-icons">verified_user</i> ${t.rule_t}</div>
+                            
+                            <div class="rule-row">
+                                <div class="rule-num">1</div>
+                                <div class="rule-text"><h4>${t.r1_t}</h4><p>${t.r1_d}</p></div>
+                            </div>
+                            <div class="rule-row">
+                                <div class="rule-num">2</div>
+                                <div class="rule-text"><h4>${t.r2_t}</h4><p>${t.r2_d}</p></div>
+                            </div>
+                            <div class="rule-row">
+                                <div class="rule-num">3</div>
+                                <div class="rule-text"><h4>${t.r3_t}</h4><p>${t.r3_d}</p></div>
+                            </div>
                         </div>
 
-                    </div>
-
-                    <div class="welcome-footer">
-                        <a href="https://speedo.lk" target="_blank">${t.visit_site}</a> • 
-                        <a href="#">${t.privacy_link}</a>
+                        <div class="welcome-footer">
+                            <a href="https://speedo.lk">${t.links_web}</a>
+                            <a href="#">${t.links_priv}</a>
+                        </div>
                     </div>
                 </div>
             `;
             document.body.appendChild(overlay);
         }
 
-        function stepPending(div) {
-            const t = translations[currentLang];
-            div.innerHTML = `
-                <div class="status-container">
-                    <i class="material-icons status-icon pending">hourglass_empty</i>
-                    <h2>${t.pending_title}</h2>
-                    <p class="highlight-text" style="text-align:center">${t.pending_msg}</p>
-                    <div style="margin-top:30px; padding:15px; background:#f5f5f5; border-radius:8px; font-size:0.9rem; color:#666;">
-                        ${t.check_back}
-                    </div>
-                </div>`;
+        // --- HELPER BUILDERS ---
+        function mkInput(l, t, v, ro) {
+            const d=document.createElement('div'); d.className='input-group';
+            d.innerHTML = `<label>${l}</label><input type="${t}" value="${v||''}" ${ro?'readonly':''}>`;
+            return d;
         }
-
-        function stepDeclined(div, data) {
-            const t = translations[currentLang];
-            const reasons = data.reasons || "Document Verification Failed";
-            div.innerHTML = `
-                <div class="status-container">
-                    <i class="material-icons status-icon error">error_outline</i>
-                    <h2 style="color:var(--error-red)">${t.approval_failed}</h2>
-                    
-                    <div class="reason-box">
-                        <strong style="display:block; margin-bottom:5px;">${t.reason_lbl}</strong>
-                        ${reasons}
-                    </div>
-                    
-                    <button class="btn-continue" id="btn-try-again">${t.try_again}</button>
-                </div>`;
-            
-            document.getElementById('btn-try-again').onclick = () => {
-                if(confirm("This will clear your current application and allow you to re-submit. Continue?")) {
-                    const uid = getUid();
-                    localStorage.removeItem('speedo_driver_data');
-                    remove(ref(db, `drivers/${uid}`)).then(() => {
-                            regData = { personal: {}, vehicle: {}, files: {} };
-                            renderStep('reg_step_1');
-                    }).catch((e) => window.showToast(t.delete_error));
-                }
-            };
+        function mkSelect(l, opts) {
+            const d=document.createElement('div'); d.className='input-group';
+            let h = `<label>${l}</label><select><option value="" disabled selected>Select</option>`;
+            opts.forEach(o => h+=`<option value="${o}">${o}</option>`);
+            h += `</select>`; d.innerHTML=h; return d;
         }
-
-        // --- REGISTRATION ---
-        function updateProgressBar(step) {
-            const bar = document.getElementById('reg-progress-bar');
-            bar.style.display = 'flex';
-            const fill = document.getElementById('progress-fill');
-            fill.style.width = (step * 33.33) + '%';
-        }
-
-        function startRegistration(div, step) {
-            document.getElementById('main-card').classList.add('expanded');
-            document.getElementById('top-image').classList.add('hidden');
-            updateProgressBar(step);
-            const t = translations[currentLang];
-
-            if(step === 1) {
-                div.innerHTML = `<h2>${t.reg_title_1}</h2>`;
-                const nameGrp = mkInput(t.name_lbl, 'text', regData.personal.name || '');
-                nameGrp.querySelector('input').oninput = (e) => { e.target.classList.toggle('valid', e.target.value.length > 3); regData.personal.name = e.target.value; };
-                
-                const phoneGrp = mkInput(t.phone_title, 'text', selectedPhone, true);
-                
-                const addrGrp = mkInput(t.addr_lbl, 'text', regData.personal.address || '');
-                addrGrp.querySelector('input').oninput = (e) => { e.target.classList.toggle('valid', e.target.value.length > 5); regData.personal.address = e.target.value; };
-                
-                const distGrp = mkSelect(t.dist_lbl, []); const distSel = distGrp.querySelector('select');
-                const provGrp = mkSelect(t.prov_lbl, provinces); const provSel = provGrp.querySelector('select');
-                provSel.onchange = (e) => {
-                    const p = e.target.value; regData.personal.province = p; provSel.classList.add('valid');
-                    distSel.innerHTML = '<option value="" disabled selected>Select</option>';
-                    if(districtMap[p]) districtMap[p].forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d; distSel.appendChild(o); });
-                };
-                distSel.onchange = (e) => { regData.personal.district = e.target.value; distSel.classList.add('valid'); };
-
-                const nicGrp = mkInput(t.nic_lbl, 'text', regData.personal.nic || '');
-                nicGrp.querySelector('input').oninput = (e) => { regData.personal.nic = e.target.value.toUpperCase(); };
-
-                const emailGrp = mkInput(t.email_lbl, 'email', regData.personal.email || '');
-                emailGrp.querySelector('input').oninput = (e) => regData.personal.email = e.target.value;
-
-                // Terms
-                const termsDiv = document.createElement('div');
-                termsDiv.style.cssText = "display:flex; gap:10px; align-items:flex-start; margin-top:15px; background:#f9f9f9; padding:15px; border-radius:8px;";
-                const chk = document.createElement('input'); chk.type = 'checkbox'; chk.style.width='20px'; chk.style.height='20px'; chk.style.marginTop='2px';
-                const p = document.createElement('div'); p.style.fontSize='0.85rem'; p.style.color='#555'; p.innerHTML = `${t.terms} <br><a href="#" style="color:var(--primary-red)">${t.privacy_link}</a>`;
-                termsDiv.append(chk, p);
-
-                const nextBtn = document.createElement('button'); nextBtn.className = 'btn-continue'; nextBtn.textContent = "Next";
-                nextBtn.onclick = () => {
-                    if(!regData.personal.name || !regData.personal.province || !regData.personal.nic || !chk.checked) {
-                        window.showToast("Please fill required fields & Accept Terms"); return;
-                    }
-                    renderStep('reg_step_2');
-                };
-                div.append(nameGrp, phoneGrp, addrGrp, provGrp, distGrp, nicGrp, emailGrp, termsDiv, nextBtn);
-            }
-
-            if(step === 2) {
-                div.innerHTML = `<h2>${t.reg_title_2}</h2>`;
-                const typeGrp = mkSelect(t.type_lbl, vehicleTypes); typeGrp.querySelector('select').onchange = (e) => regData.vehicle.type = e.target.value;
-                const brandGrp = mkSelect(t.brand_lbl, brands); const brandSel = brandGroup.querySelector('select');
-                const modelGrp = mkSelect(t.model_lbl, []); const modelSel = modelGroup.querySelector('select');
-                brandSel.onchange = (e) => {
-                    regData.vehicle.brand = e.target.value; modelSel.innerHTML = '<option value="" disabled selected>Select</option>';
-                    (models[e.target.value] || models['Default']).forEach(m => { const o=document.createElement('option'); o.value=m; o.textContent=m; modelSel.appendChild(o); });
-                };
-                modelSel.onchange = (e) => regData.vehicle.model = e.target.value;
-
-                const plateGrp = mkInput(t.plate_lbl, 'text', regData.vehicle.plate || '');
-                plateGrp.querySelector('input').oninput = (e) => regData.vehicle.plate = e.target.value.toUpperCase();
-
-                const years = []; for(let y=1990; y<=2027; y++) years.push(y);
-                const yearGrp = mkSelect(t.year_lbl, years); yearGrp.querySelector('select').onchange = (e) => regData.vehicle.year = e.target.value;
-
-                const nextBtn = document.createElement('button'); nextBtn.className = 'btn-continue'; nextBtn.textContent = "Next";
-                nextBtn.onclick = () => { if(!regData.vehicle.type || !regData.vehicle.brand || !regData.vehicle.plate) { window.showToast("Complete Vehicle Details"); return; } renderStep('reg_step_3'); };
-                div.append(typeGrp, brandGroup, modelGroup, plateGroup, yearGrp, nextBtn);
-            }
-
-            if(step === 3) {
-                div.innerHTML = `<h2>${t.reg_title_3}</h2><p class="highlight-text" style="text-align:center">${t.upload_guide}</p>`;
-                
-                const profSec = document.createElement('div'); profSec.className = 'profile-section';
-                const oval = document.createElement('div'); oval.className = 'profile-circle';
-                oval.innerHTML = `<i class="material-icons camera-icon">camera_alt</i>`;
-                const pInput = document.createElement('input'); pInput.type='file'; pInput.accept='image/*'; pInput.hidden=true;
-                oval.onclick = () => pInput.click();
-                pInput.onchange = async (e) => { if(e.target.files[0]) { regData.files['profile'] = await processImage(e.target.files[0]); oval.classList.add('uploaded'); oval.innerHTML = `<img src="${regData.files['profile']}">`; } };
-                profSec.append(document.createElement('label'), oval); div.appendChild(profSec);
-
-                const grid = document.createElement('div'); grid.className = 'doc-grid';
-                const docs = [{k:'v_front', l:t.doc_fv}, {k:'v_back', l:t.doc_bv}, {k:'nic_f', l:t.doc_nic_f}, {k:'nic_b', l:t.doc_nic_b}, {k:'license', l:t.doc_lic}, {k:'ins', l:t.doc_ins}, {k:'rev', l:t.doc_rev}];
-                docs.forEach(d => {
-                    const card = document.createElement('div'); card.className = 'doc-card';
-                    card.innerHTML = `<i class="material-icons">cloud_upload</i><span>${d.l}</span>`;
-                    const inp = document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.hidden=true;
-                    card.onclick = () => inp.click();
-                    inp.onchange = async (e) => { if(e.target.files[0]) { regData.files[d.k] = await processImage(e.target.files[0]); card.classList.add('uploaded'); card.innerHTML = `<img src="${regData.files[d.k]}"><div class="doc-card-overlay"><span>${d.l}</span></div>`; } };
-                    grid.appendChild(card);
-                });
-                div.appendChild(grid);
-
-                const regBtn = document.createElement('button'); regBtn.className = 'btn-continue'; regBtn.textContent = t.register_btn;
-                regBtn.onclick = () => {
-                    if(Object.keys(regData.files).length < 8) window.showToast("Upload all documents");
-                    toggleLoader(true, t.registering);
-                    const uid = getUid();
-                    const finalData = { phone: selectedPhone, uid: uid, personal: regData.personal, vehicle: regData.vehicle, documents: regData.files, approval_status: 'pending', registered_at: new Date().toISOString() };
-                    set(ref(db, `drivers/${uid}`), finalData).then(() => {
-                        localStorage.setItem('speedo_driver_data', JSON.stringify(finalData));
-                        toggleLoader(false);
-                        window.showToast("Registration Successful");
-                        renderStep('pending');
-                    }).catch(() => { toggleLoader(false); window.showToast("Server Error"); });
-                };
-                div.appendChild(regBtn);
-            }
-        }
-
-        function mkInput(lbl, type, val, ro) { const g=document.createElement('div'); g.className='input-group'; g.innerHTML=`<label>${lbl}</label>`; const i=document.createElement('input'); i.type=type; i.value=val; if(ro) i.readOnly=true; g.appendChild(i); return g; }
-        function mkSelect(lbl, opts) { const g=document.createElement('div'); g.className='input-group'; g.innerHTML=`<label>${lbl}</label>`; const s=document.createElement('select'); s.innerHTML='<option value="" disabled selected>Select</option>'; opts.forEach(o=>s.innerHTML+=`<option value="${o}">${o}</option>`); g.appendChild(s); return g; }
 
     </script>
 </body>
