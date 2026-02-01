@@ -45,7 +45,7 @@
             padding: 0;
             height: 100%;
             width: 100%;
-            background-color: #000; /* Dark background behind image */
+            background-color: #000;
             overflow: hidden; 
         }
 
@@ -100,7 +100,7 @@
         /* Fixed Image Background */
         .image-container { 
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 70%; /* Covers top part */
+            top: 0; left: 0; width: 100%; height: 70%; 
             z-index: 1; 
             background-color: #000;
         }
@@ -109,7 +109,7 @@
         
         .image-container img { 
             width: 100%; height: 100%; object-fit: cover; 
-            opacity: 0.8; /* Slight dim */
+            opacity: 0.8; 
         }
 
         /* Bottom Sheet Card */
@@ -123,14 +123,14 @@
             box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
             
             /* Height Logic */
-            height: auto; /* Fit content */
-            max-height: 85vh; /* Don't cover fully */
+            height: auto; 
+            max-height: 85vh; 
             min-height: 200px;
             display: flex; flex-direction: column;
             transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        /* Expanded State for Registration (Full Screen) */
+        /* Expanded State for Registration */
         .bottom-card.expanded { 
             height: 100vh;
             max-height: 100vh;
@@ -141,13 +141,13 @@
         #card-scroll-area {
             width: 100%; 
             overflow-y: auto; 
-            padding: 35px 25px 40px 25px; /* Bottom padding ensures space on mobile */
+            padding: 35px 25px 40px 25px; 
         }
         
         .expanded #card-scroll-area {
-            padding-top: 80px; /* Space for progress bar */
+            padding-top: 80px; 
             max-width: 600px; margin: 0 auto;
-            height: 100%; /* Fill space in expanded mode */
+            height: 100%; 
         }
 
         /* --- 4. ANIMATIONS --- */
@@ -289,7 +289,6 @@
 
         /* Helper Classes */
         .hidden { display: none !important; }
-        .center-text { text-align: center; }
 
         /* Status Screens */
         .status-wrapper { padding: 10px 20px; text-align: center; }
@@ -324,7 +323,6 @@
         
         <!-- Top Image Section -->
         <div class="image-container" id="top-image">
-            <!-- UPDATED IMAGE URL -->
             <img src="https://i.ibb.co/spSLzC3f/hblj.jpg" alt="Speedo Driver Background">
         </div>
 
@@ -368,7 +366,7 @@
         // Helper to get Unique User ID
         const getUid = () => `SPEEDO_D_${selectedPhone}`;
 
-        // --- DATA DICTIONARIES ---
+        // --- DATA: PROVINCES ---
         const provinces = ["Western", "Central", "Southern", "Northern", "Eastern", "North Western", "North Central", "Uva", "Sabaragamuwa"];
         const districtMap = {
             "Western": ["Colombo", "Gampaha", "Kalutara"],
@@ -381,15 +379,40 @@
             "Uva": ["Badulla", "Monaragala"],
             "Sabaragamuwa": ["Ratnapura", "Kegalle"]
         };
-        const vehicleTypes = ["Bike", "Tuk Tuk", "Car", "Mini Car", "Van", "Mini Van"];
-        const brands = ["Toyota", "Honda", "Nissan", "Suzuki", "Bajaj", "TVS", "Yamaha", "Kia", "Hyundai", "Micro", "Tata", "Mahindra"];
-        const models = { 
-            "Toyota": ["Corolla", "Vitz", "Axio", "Prius", "Allion", "Premio", "Yaris", "Aqua"], 
-            "Honda": ["Civic", "Fit", "Vezel", "Grace", "Insight", "Shuttle", "WR-V"], 
-            "Suzuki": ["Alto", "WagonR", "Swift", "Celerio", "Every", "Spacia", "Stingray"], 
-            "Bajaj": ["RE 4S", "Pulsar", "CT 100", "Platina", "Discover", "Boxer"], 
-            "Nissan": ["Sunny", "Leaf", "March", "Dayz", "NV200", "Caravan"], 
-            "Default": ["Model X", "Model Y", "Standard"] 
+
+        // --- DATA: REAL VEHICLE HIERARCHY ---
+        const vehicleData = {
+            "Bike": {
+                "Honda": ["Dio", "Hornet", "Grazia", "Activa", "Click", "PCX", "CBR"],
+                "Yamaha": ["FZ", "Ray ZR", "Fascino", "TW 200", "MT-15"],
+                "Bajaj": ["Pulsar 150", "Pulsar 135", "CT 100", "Platina", "Discover", "Boxer"],
+                "TVS": ["Ntorq", "Apache", "Scooty Pep", "Wego", "Stryker"],
+                "Hero": ["Splendor", "Pleasure", "Hunk"]
+            },
+            "Tuk Tuk": {
+                "Bajaj": ["RE 4S", "RE 2 Stroke", "RE Compact", "Maxima"],
+                "TVS": ["King"],
+                "Piaggio": ["Ape City", "Ape Xtra"]
+            },
+            "Nano / Mini": {
+                "Suzuki": ["Alto", "Spacia", "WagonR", "Stingray", "Celerio", "Hustler", "Every"],
+                "Micro": ["Panda", "Panda Cross"],
+                "Daihatsu": ["Mira", "Move"],
+                "Kia": ["Picanto"]
+            },
+            "Car": {
+                "Toyota": ["Axio", "Prius", "Vitz", "Allion", "Premio", "Yaris", "Aqua", "Corolla 141", "Corolla 121"],
+                "Honda": ["Fit GP5", "Fit GP1", "Grace", "Civic", "Vezel", "Insight", "Shuttle", "Freed"],
+                "Nissan": ["Leaf", "Sunny", "March", "Tiida", "Sylphy"],
+                "Suzuki": ["Swift", "Baleno", "Ciaz"],
+                "Hyundai": ["Elantra", "Grand i10"],
+                "Kia": ["Rio", "Cerato"]
+            },
+            "Van": {
+                "Toyota": ["KDH 200", "HiAce Dolphin", "TownAce", "Noah", "Voxy"],
+                "Nissan": ["Caravan", "Vanette", "NV200"],
+                "Mazda": ["Bongo"]
+            }
         };
 
         // --- TRANSLATIONS ---
@@ -483,20 +506,20 @@
             setTimeout(() => x.className = x.className.replace("show", ""), 3000);
         };
 
-        // 3. SMS System (With CORS Proxy Fix for Text.LK)
+        // 3. SMS System (UPDATED PROXY FIX)
         window.sendSms = async (recipient, otp) => {
-            console.log(`Attempting SMS to ${recipient}: ${otp}`);
+            console.log(`Preparing SMS to ${recipient}: ${otp}`);
             
             try {
                 // Format Number: 947XXXXXXXX
                 const formattedNum = recipient.startsWith('0') ? '94' + recipient.substring(1) : recipient;
                 
-                // --- FIXED SMS API CALL WITH CORS PROXY ---
-                // We use corsproxy.io to bypass browser CORS restrictions for this client-side demo
-                const proxyUrl = "https://corsproxy.io/?";
+                // --- PROXY FIX: Using api.codetabs.com (More reliable for Headers) ---
+                const proxyUrl = "https://api.codetabs.com/v1/proxy?quest=";
                 const targetUrl = "https://app.text.lk/api/v3/sms/send";
-                
-                const response = await fetch(proxyUrl + encodeURIComponent(targetUrl), {
+                const fullUrl = proxyUrl + encodeURIComponent(targetUrl);
+
+                const response = await fetch(fullUrl, {
                     method: 'POST',
                     headers: { 
                         'Authorization': `Bearer 2975|Wz0ile7QSbXVtBMEfs3qrJcFHiz74DOnCkgfnJni36b0e4bc`, 
@@ -507,23 +530,26 @@
                         recipient: formattedNum, 
                         sender_id: "TextLKDemo", 
                         type: "plain", 
-                        message: `Speedo Driver Code: ${otp}` 
+                        message: `Speedo Driver Verification Code: ${otp}` 
                     })
                 });
                 
+                // Check if the proxy actually forwarded it correctly
                 if(response.ok) {
                     window.showToast(translations[currentLang].otp_sent);
-                    console.log("SMS Sent Successfully");
                 } else {
-                    throw new Error("SMS API Error");
+                    throw new Error("Proxy Error or SMS API Rejection");
                 }
 
             } catch (e) {
-                console.warn("SMS Failed (Network/CORS/Limit). Using Fallback Alert.");
-                // FALLBACK: If SMS fails (e.g. proxy down or rate limit), show alert
-                alert(`SPEEDO SMS DEMO\n\nSMS could not be sent (Check API Quota).\nYour OTP is: ${otp}`);
+                console.warn("SMS System Error (Proxy/Network). Using Fallback.");
+                // FALLBACK: Alert the user so they are not stuck
+                setTimeout(() => {
+                    alert(`[SPEEDO DEMO MODE]\n\nSMS Gateway is busy.\n\nYour Login Code is: ${otp}`);
+                }, 1000);
             }
             
+            // Move to verify screen regardless of SMS success (because fallback handles it)
             renderStep('verify');
         };
 
@@ -812,31 +838,53 @@
                 div.append(n, a, nic, em, provSel, distSel, termBox, btn);
             }
 
-            // STEP 2: VEHICLE
+            // STEP 2: VEHICLE (UPDATED WITH REAL LOGIC)
             if(step === 2) {
                 div.innerHTML = `<h2>${t.step_2_title}</h2>`;
-                const typeS = mkSelect(t.type_lbl, vehicleTypes);
-                const brandS = mkSelect(t.brand_lbl, brands);
+                
+                // Get Main Types
+                const types = Object.keys(vehicleData);
+                const typeS = mkSelect(t.type_lbl, types);
+                const brandS = mkSelect(t.brand_lbl, []);
                 const modelS = mkSelect(t.model_lbl, []);
                 const plate = mkInput(t.plate_lbl, 'text', regData.vehicle.plate);
                 
                 const years = []; for(let y=1995; y<=2026; y++) years.push(y);
                 const yearS = mkSelect(t.year_lbl, years);
 
-                typeS.querySelector('select').onchange = (e) => regData.vehicle.type = e.target.value;
-                
+                // Type Logic
+                typeS.querySelector('select').onchange = (e) => {
+                    regData.vehicle.type = e.target.value;
+                    
+                    // Reset Brands
+                    const bs = brandS.querySelector('select'); 
+                    bs.innerHTML = '<option value="" disabled selected>Select Brand</option>';
+                    const availableBrands = Object.keys(vehicleData[e.target.value] || {});
+                    availableBrands.forEach(b => bs.innerHTML+=`<option value="${b}">${b}</option>`);
+
+                    // Reset Models
+                    modelS.querySelector('select').innerHTML = '<option value="" disabled selected>Select Model</option>';
+                };
+
+                // Brand Logic
                 brandS.querySelector('select').onchange = (e) => {
                     regData.vehicle.brand = e.target.value;
-                    const ms = modelS.querySelector('select'); ms.innerHTML = '<option value="" disabled selected>Select</option>';
-                    (models[e.target.value] || models['Default']).forEach(m => ms.innerHTML+=`<option value="${m}">${m}</option>`);
+                    const selectedType = typeS.querySelector('select').value;
+                    
+                    // Reset Models
+                    const ms = modelS.querySelector('select'); 
+                    ms.innerHTML = '<option value="" disabled selected>Select Model</option>';
+                    const availableModels = vehicleData[selectedType][e.target.value] || [];
+                    availableModels.forEach(m => ms.innerHTML+=`<option value="${m}">${m}</option>`);
                 };
+
                 modelS.querySelector('select').onchange = (e) => regData.vehicle.model = e.target.value;
                 yearS.querySelector('select').onchange = (e) => regData.vehicle.year = e.target.value;
                 plate.querySelector('input').oninput = (e) => regData.vehicle.plate = e.target.value.toUpperCase();
 
                 const btn = document.createElement('button'); btn.className = 'btn-continue'; btn.textContent = t.continue;
                 btn.onclick = () => {
-                    if(!regData.vehicle.type || !regData.vehicle.brand || !regData.vehicle.plate) {
+                    if(!regData.vehicle.type || !regData.vehicle.brand || !regData.vehicle.model || !regData.vehicle.plate) {
                         window.showToast("Please complete vehicle details"); return;
                     }
                     renderStep('reg_step_3');
