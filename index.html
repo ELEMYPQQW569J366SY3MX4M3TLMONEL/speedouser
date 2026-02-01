@@ -45,8 +45,8 @@
             padding: 0;
             height: 100%;
             width: 100%;
-            background-color: var(--white);
-            overflow: hidden; /* Prevent body scroll, handle inside elements */
+            background-color: #000; /* Dark background behind image */
+            overflow: hidden; 
         }
 
         /* --- 1. FULL SCREEN LOADER --- */
@@ -90,82 +90,85 @@
         .progress-track { width: 100%; max-width: 400px; height: 6px; background: #eee; border-radius: 10px; overflow: hidden; }
         .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary-red), #ff5252); width: 0%; transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
 
-        /* --- 3. MAIN LAYOUT (IMAGE + CARD) --- */
+        /* --- 3. MAIN LAYOUT (IMAGE + BOTTOM SHEET) --- */
         #app-container {
             opacity: 0; transition: opacity 0.6s ease;
             height: 100vh; width: 100vw;
-            display: flex; flex-direction: column;
+            position: relative;
         }
 
-        /* Fixed Image at Top */
+        /* Fixed Image Background */
         .image-container { 
-            height: 45vh; /* Takes top 45% */
-            width: 100%; 
-            position: relative; 
-            z-index: 1; /* Behind card */
-            background-color: #000; /* Fallback */
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 70%; /* Covers top part */
+            z-index: 1; 
+            background-color: #000;
         }
         
         .image-container.hidden { display: none; }
         
         .image-container img { 
             width: 100%; height: 100%; object-fit: cover; 
-            opacity: 0.9;
+            opacity: 0.8; /* Slight dim */
         }
 
-        /* Card that overlaps the image */
+        /* Bottom Sheet Card */
         .bottom-card {
-            flex: 1; /* Takes remaining space */
+            position: absolute;
+            bottom: 0; left: 0; width: 100%;
             background-color: var(--white);
-            margin-top: -40px; /* NEGATIVE MARGIN TO OVERLAP IMAGE */
             border-top-left-radius: var(--card-radius); 
             border-top-right-radius: var(--card-radius);
-            z-index: 10; /* Above image */
-            display: flex; flex-direction: column; 
-            position: relative;
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.15); /* Shadow to emphasize overlap */
-            overflow: hidden;
+            z-index: 10;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
+            
+            /* Height Logic */
+            height: auto; /* Fit content */
+            max-height: 85vh; /* Don't cover fully */
+            min-height: 200px;
+            display: flex; flex-direction: column;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        /* Expanded State for Registration/Welcome */
+        /* Expanded State for Registration (Full Screen) */
         .bottom-card.expanded { 
-            margin-top: 0; 
-            border-radius: 0; 
             height: 100vh;
+            max-height: 100vh;
+            border-radius: 0; 
         }
 
         /* Scrollable Content Area */
         #card-scroll-area {
-            width: 100%; height: 100%;
-            overflow-y: auto; /* Internal scroll */
-            padding: 30px 25px 50px 25px;
-            display: flex; flex-direction: column; align-items: center;
+            width: 100%; 
+            overflow-y: auto; 
+            padding: 35px 25px 40px 25px; /* Bottom padding ensures space on mobile */
         }
         
         .expanded #card-scroll-area {
             padding-top: 80px; /* Space for progress bar */
             max-width: 600px; margin: 0 auto;
+            height: 100%; /* Fill space in expanded mode */
         }
 
         /* --- 4. ANIMATIONS --- */
-        .slide-out-left { animation: slideOutLeft 0.4s forwards; }
-        .slide-in-right { animation: slideInRight 0.4s forwards; }
-        @keyframes slideInRight { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes slideOutLeft { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-50px); opacity: 0; } }
+        .slide-out-left { animation: slideOutLeft 0.3s forwards; }
+        .slide-in-right { animation: slideInRight 0.3s forwards; }
+        @keyframes slideInRight { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOutLeft { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-30px); opacity: 0; } }
 
         /* --- 5. UI ELEMENTS --- */
         h2 { 
-            font-size: 1.5rem; color: var(--accent-black); text-align: center; 
-            margin: 0 0 20px 0; font-weight: 800; letter-spacing: -0.5px; 
+            font-size: 1.4rem; color: var(--accent-black); text-align: center; 
+            margin: 0 0 15px 0; font-weight: 800; letter-spacing: -0.5px; 
         }
         
-        p { color: var(--text-sub); line-height: 1.5; margin-bottom: 20px; text-align: center; }
+        p { color: var(--text-sub); line-height: 1.5; margin-bottom: 20px; text-align: center; font-size: 0.95rem; }
 
         /* Buttons */
         .lang-btn { 
-            width: 100%; padding: 18px; margin-bottom: 12px; 
+            width: 100%; padding: 16px; margin-bottom: 10px; 
             border: 1px solid var(--gray-border); border-radius: var(--btn-radius); 
-            background: white; font-size: 1.1rem; cursor: pointer; text-align: center; 
+            background: white; font-size: 1rem; cursor: pointer; text-align: center; 
             font-weight: 500; transition: all 0.2s; position: relative; overflow: hidden;
         }
         .lang-btn.selected { 
@@ -175,22 +178,22 @@
         
         .btn-continue { 
             width: 100%; padding: 16px; background-color: var(--primary-red); color: white; 
-            border: none; border-radius: var(--btn-radius); font-size: 1.1rem; margin-top: 25px; 
+            border: none; border-radius: var(--btn-radius); font-size: 1.1rem; margin-top: 20px; 
             cursor: pointer; font-weight: 700; letter-spacing: 0.5px;
             box-shadow: 0 6px 20px rgba(213, 0, 0, 0.3); transition: transform 0.2s;
         }
         .btn-continue:active { transform: scale(0.97); }
 
         /* Inputs */
-        .input-group { width: 100%; margin-bottom: 20px; text-align: left; }
+        .input-group { width: 100%; margin-bottom: 18px; text-align: left; }
         .input-group label { 
-            display: block; margin-bottom: 8px; font-size: 0.85rem; 
+            display: block; margin-bottom: 6px; font-size: 0.8rem; 
             color: var(--text-sub); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
         }
         
         input, select { 
-            width: 100%; padding: 16px; border: 1px solid var(--gray-border); border-radius: var(--input-radius); 
-            font-size: 1.1rem; outline: none; background: #fff; color: var(--text-main);
+            width: 100%; padding: 14px; border: 1px solid var(--gray-border); border-radius: var(--input-radius); 
+            font-size: 1.05rem; outline: none; background: #fff; color: var(--text-main);
             transition: border-color 0.3s, box-shadow 0.3s;
         }
         input:focus, select:focus { border-color: var(--primary-red); box-shadow: 0 0 0 4px rgba(213, 0, 0, 0.1); }
@@ -262,6 +265,16 @@
         .doc-box.done { background: #e8f5e9; border: 2px solid var(--success-green); }
         .doc-box img { width: 100%; height: 100%; object-fit: cover; position: absolute; }
         .doc-label { font-size: 0.75rem; color: #666; font-weight: 600; text-align: center; z-index: 2; background: rgba(255,255,255,0.8); padding: 2px 6px; border-radius: 4px; }
+        
+        .profile-section { text-align: center; margin-bottom: 20px; }
+        .profile-circle { 
+            width: 100px; height: 100px; border-radius: 50%; background: #f0f0f0; margin: 0 auto; 
+            display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;
+            border: 2px dashed #ccc;
+        }
+        .profile-circle.done { border: 2px solid var(--success-green); }
+        .profile-circle img { width: 100%; height: 100%; object-fit: cover; }
+        .camera-icon { color: #888; font-size: 30px; }
 
         /* --- 8. TOAST --- */
         #toast { 
@@ -279,8 +292,8 @@
         .center-text { text-align: center; }
 
         /* Status Screens */
-        .status-wrapper { padding: 40px 20px; text-align: center; }
-        .status-icon-main { font-size: 80px; margin-bottom: 20px; }
+        .status-wrapper { padding: 10px 20px; text-align: center; }
+        .status-icon-main { font-size: 70px; margin-bottom: 15px; }
         .status-pending { color: var(--warning-amber); animation: pulse 2s infinite; }
         .status-error { color: var(--error-crimson); }
         .status-msg-box { background: #f5f5f5; padding: 20px; border-radius: 12px; margin-top: 20px; text-align: left; }
@@ -311,11 +324,11 @@
         
         <!-- Top Image Section -->
         <div class="image-container" id="top-image">
-            <!-- Ensure this image URL is valid and high res -->
-            <img src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=2070&auto=format&fit=crop" alt="Speedo Driver Background">
+            <!-- UPDATED IMAGE URL -->
+            <img src="https://i.ibb.co/spSLzC3f/hblj.jpg" alt="Speedo Driver Background">
         </div>
 
-        <!-- Overlapping Card Section -->
+        <!-- Bottom Sheet Card Section -->
         <div class="bottom-card" id="main-card">
             <div id="card-scroll-area">
                 <!-- Content is injected here dynamically -->
@@ -332,7 +345,6 @@
         import { getDatabase, ref, get, child, set, remove } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
 
         // --- FIREBASE CONFIGURATION ---
-        // (Using the user provided config)
         const firebaseConfig = {
             apiKey: "AIzaSyDeCmIR6QnvCJWRgBYxgLinxwMIOmJfMxc",
             authDomain: "speedo-main.firebaseapp.com",
@@ -383,7 +395,6 @@
         // --- TRANSLATIONS ---
         const translations = {
             en: {
-                // Auth & General
                 select_lang: "Select Your Language", 
                 continue: "Continue", 
                 phone_title: "Enter Mobile Number", 
@@ -395,84 +406,34 @@
                 verify_btn: "Verify & Proceed", 
                 wrong_otp: "Incorrect Code. Please try again.",
                 resend: "Resend Code",
-                
-                // Registration
-                step_1_title: "About You",
-                name_lbl: "Full Name",
-                addr_lbl: "Home Address",
-                nic_lbl: "NIC Number",
-                email_lbl: "Email (Optional)",
-                prov_lbl: "Province",
-                dist_lbl: "District",
-                terms_txt: "I agree to Speedo's Terms of Service",
-                
-                step_2_title: "Your Vehicle",
-                type_lbl: "Vehicle Type",
-                brand_lbl: "Brand",
-                model_lbl: "Model",
-                plate_lbl: "Plate Number (WP ABC-1234)",
-                year_lbl: "Year of Manufacture",
-                
-                step_3_title: "Documents",
-                doc_guide: "Tap squares to upload clear photos",
-                d_pf: "Profile Photo",
-                d_vf: "Vehicle Front",
-                d_vb: "Vehicle Back",
-                d_nf: "NIC Front",
-                d_nb: "NIC Back",
-                d_dl: "Driving License",
-                d_in: "Insurance",
-                d_rl: "Revenue License",
-                submit_btn: "Submit Application",
-                uploading: "Uploading securely...",
-                
-                // Status
-                status_pending_t: "Application Pending",
-                status_pending_d: "We are reviewing your details. This usually takes 24 hours. We will SMS you once active.",
-                status_declined_t: "Application Declined",
-                status_retry: "Update & Resubmit",
-                
-                // Welcome (Detailed)
-                w_title: "Welcome to Speedo Driver Community!",
-                w_sub: "Important: Do NOT uninstall this app. We will notify you via SMS when service starts in your city.",
-                
-                sec_1_t: "What is Speedo?",
-                sec_1_d: "Speedo is a 'Gig-Based' platform. Unlike Uber or PickMe, YOU set the price. You negotiate directly with passengers.",
-                
-                sec_2_t: "Why Speedo?",
-                gig_1: "Name Your Price",
-                gig_2: "0% Commission",
-                
-                fee_t: "Simple Pricing",
-                fee_v: "100 LKR",
-                fee_l: "Daily Access Fee",
-                fee_d: "Only pay on days you work. Keep 100% of your ride earnings.",
-                
-                rule_t: "Driver Guidelines",
-                r1_t: "Negotiation", r1_d: "Be fair with your pricing to win more rides.",
-                r2_t: "Hygiene", r2_d: "Clean cars get 5-star ratings and more requests.",
-                r3_t: "Safety", r3_d: "Follow traffic rules. Passenger safety is priority.",
-                
-                links_web: "Visit Website",
-                links_priv: "Privacy Policy"
+                step_1_title: "About You", name_lbl: "Full Name", addr_lbl: "Home Address", nic_lbl: "NIC Number", email_lbl: "Email (Optional)",
+                prov_lbl: "Province", dist_lbl: "District", terms_txt: "I agree to Speedo's Terms of Service",
+                step_2_title: "Your Vehicle", type_lbl: "Vehicle Type", brand_lbl: "Brand", model_lbl: "Model", plate_lbl: "Plate Number (WP ABC-1234)", year_lbl: "Year of Manufacture",
+                step_3_title: "Documents", doc_guide: "Tap squares to upload clear photos", d_pf: "Profile Photo", d_vf: "Vehicle Front", d_vb: "Vehicle Back",
+                d_nf: "NIC Front", d_nb: "NIC Back", d_dl: "Driving License", d_in: "Insurance", d_rl: "Revenue License",
+                submit_btn: "Submit Application", uploading: "Uploading securely...", please_wait: "Checking Status...",
+                status_pending_t: "Application Pending", status_pending_d: "We are reviewing your details. This usually takes 24 hours. We will SMS you once active.",
+                status_declined_t: "Application Declined", status_retry: "Update & Resubmit", reason_lbl: "Reason:",
+                w_title: "Welcome to Speedo Driver Community!", w_sub: "Important: Do NOT uninstall this app. We will notify you via SMS when service starts in your city.",
+                sec_1_t: "What is Speedo?", sec_1_d: "Speedo is a 'Gig-Based' platform. Unlike Uber or PickMe, YOU set the price. You negotiate directly with passengers.",
+                sec_2_t: "Why Speedo?", gig_1: "Name Your Price", gig_2: "0% Commission",
+                fee_t: "Simple Pricing", fee_v: "100 LKR", fee_l: "Daily Access Fee", fee_d: "Only pay on days you work. Keep 100% of your ride earnings.",
+                rule_t: "Driver Guidelines", r1_t: "Negotiation", r1_d: "Be fair with your pricing to win more rides.",
+                r2_t: "Hygiene", r2_d: "Clean cars get 5-star ratings and more requests.", r3_t: "Safety", r3_d: "Follow traffic rules. Passenger safety is priority.",
+                links_web: "Visit Website", links_priv: "Privacy Policy"
             },
             si: {
                 select_lang: "භාෂාවක් තෝරන්න", continue: "ඉදිරියට යන්න", phone_title: "දුරකථන අංකය", phone_hint: "07XXXXXXXX",
                 invalid_phone: "නිවැරදි දුරකථන අංකයක් ඇතුළත් කරන්න", otp_sent: "OTP යවන ලදි", verify_title: "අංකය තහවුරු කරන්න",
                 verify_sub: "ඔබේ දුරකථනයට ලැබුණු කේතය ඇතුලත් කරන්න", verify_btn: "තහවුරු කරන්න", wrong_otp: "වැරදි කේතයකි", resend: "නැවත එවන්න",
-                
                 step_1_title: "ඔබේ විස්තර", name_lbl: "සම්පූර්ණ නම", addr_lbl: "ලිපිනය", nic_lbl: "ජා. හැ. අංකය", email_lbl: "විද්‍යුත් තැපෑල",
                 prov_lbl: "පළාත", dist_lbl: "දිස්ත්‍රික්කය", terms_txt: "මම නියමයන්ට එකඟ වෙමි",
-                
                 step_2_title: "වාහන විස්තර", type_lbl: "වර්ගය", brand_lbl: "වෙළඳ නාමය", model_lbl: "මාදිලිය", plate_lbl: "ලියාපදිංචි අංකය", year_lbl: "වර්ෂය",
-                
                 step_3_title: "ලේඛන", doc_guide: "පැහැදිලි ඡායාරූප උඩුගත කරන්න", d_pf: "ඔබේ ඡායාරූපය", d_vf: "වාහනය ඉදිරිපස", d_vb: "වාහනය පිටුපස",
                 d_nf: "ජා.හැ. ඉදිරිපස", d_nb: "ජා.හැ. පිටුපස", d_dl: "රියදුරු බලපත්‍රය", d_in: "රක්ෂණ සහතිකය", d_rl: "ආදායම් බලපත්‍රය",
-                submit_btn: "ලියාපදිංචි වන්න", uploading: "සකසමින් පවතී...",
-                
+                submit_btn: "ලියාපදිංචි වන්න", uploading: "සකසමින් පවතී...", please_wait: "කරුණාකර රැඳී සිටින්න...",
                 status_pending_t: "අනුමැතිය අපේක්ෂාවෙන්", status_pending_d: "ඔබේ අයදුම්පත පරීක්ෂා කරමින් පවතී. අනුමත වූ පසු අපි ඔබට SMS එවන්නෙමු.",
-                status_declined_t: "ප්‍රතික්ෂේප විය", status_retry: "නැවත උත්සාහ කරන්න",
-                
+                status_declined_t: "ප්‍රතික්ෂේප විය", status_retry: "නැවත උත්සාහ කරන්න", reason_lbl: "හේතුව:",
                 w_title: "SPEEDO පවුලට සාදරයෙන් පිළිගනිමු!", w_sub: "මෙම ඇප් එක ඉවත් (Uninstall) නොකරන්න. සේවාව ආරම්භ කළ විගස අපි ඔබට දැනුම් දෙන්නෙමු.",
                 sec_1_t: "Speedo කියන්නේ මොකක්ද?", sec_1_d: "මෙය 'Gig' සේවාවක්. ගාස්තුව තීරණය කරන්නේ ඔබයි. මගියා සමඟ කෙලින්ම ගනුදෙනු කරන්න.",
                 sec_2_t: "විශේෂත්ව", gig_1: "ඔබේ ගාස්තුව", gig_2: "0% කොමිස්",
@@ -484,19 +445,14 @@
                 select_lang: "மொழியைத் தேர்ந்தெடுக்கவும்", continue: "தொடரவும்", phone_title: "தொலைபேசி எண்", phone_hint: "07XXXXXXXX",
                 invalid_phone: "சரியான எண்ணை உள்ளிடவும்", otp_sent: "OTP அனுப்பப்பட்டது", verify_title: "சரிபார்க்கவும்",
                 verify_sub: "குறியீட்டை உள்ளிடவும்", verify_btn: "சரிபார்க்கவும்", wrong_otp: "தவறான குறியீடு", resend: "மீண்டும் அனுப்பு",
-                
                 step_1_title: "தனிப்பட்ட விவரங்கள்", name_lbl: "முழு பெயர்", addr_lbl: "முகவரி", nic_lbl: "தேசிய அடையாள எண்", email_lbl: "மின்னஞ்சல்",
                 prov_lbl: "மாகாணம்", dist_lbl: "மாவட்டம்", terms_txt: "விதிமுறைகளை ஏற்கிறேன்",
-                
                 step_2_title: "வாகன விவரங்கள்", type_lbl: "வகை", brand_lbl: "பிராண்ட்", model_lbl: "மாதிரி", plate_lbl: "எண் பலகை", year_lbl: "ஆண்டு",
-                
                 step_3_title: "ஆவணங்கள்", doc_guide: "புகைப்படங்களை பதிவேற்றவும்", d_pf: "சுயவிவரப் படம்", d_vf: "வாகனம் முன்", d_vb: "வாகனம் பின்",
                 d_nf: "NIC முன்", d_nb: "NIC பின்", d_dl: "உரிமம்", d_in: "காப்பீடு", d_rl: "வருவாய் அனுமதி",
-                submit_btn: "பதிவு செய்யவும்", uploading: "பதிவேற்றப்படுகிறது...",
-                
+                submit_btn: "பதிவு செய்யவும்", uploading: "பதிவேற்றப்படுகிறது...", please_wait: "காத்திருக்கவும்...",
                 status_pending_t: "நிலுவையில் உள்ளது", status_pending_d: "நாங்கள் சரிபார்க்கிறோம். விரைவில் அறிவிப்போம்.",
-                status_declined_t: "நிராகரிக்கப்பட்டது", status_retry: "மீண்டும் முயற்சிக்கவும்",
-                
+                status_declined_t: "நிராகரிக்கப்பட்டது", status_retry: "மீண்டும் முயற்சிக்கவும்", reason_lbl: "காரணம்:",
                 w_title: "SPEEDO வரவேற்கிறோம்!", w_sub: "செயலியை நீக்க வேண்டாம். சேவை தொடங்கும்போது அறிவிப்போம்.",
                 sec_1_t: "Speedo என்றால் என்ன?", sec_1_d: "விலையை நீங்களே தீர்மானிக்கலாம். பயணிகளுடன் நேரடியாக பேசுங்கள்.",
                 sec_2_t: "சிறப்பு", gig_1: "உங்கள் விலை", gig_2: "0% கமிஷன்",
@@ -527,29 +483,45 @@
             setTimeout(() => x.className = x.className.replace("show", ""), 3000);
         };
 
-        // 3. SMS System (With Fallback for robustness)
+        // 3. SMS System (With CORS Proxy Fix for Text.LK)
         window.sendSms = async (recipient, otp) => {
-            console.log(`Sending SMS to ${recipient}: ${otp}`);
+            console.log(`Attempting SMS to ${recipient}: ${otp}`);
             
             try {
-                // Try sending real SMS
+                // Format Number: 947XXXXXXXX
                 const formattedNum = recipient.startsWith('0') ? '94' + recipient.substring(1) : recipient;
                 
-                /* 
-                   NOTE: Text.lk API calls from client-side often fail due to CORS. 
-                   We try it, but catch errors to ensure app flow continues.
-                */
-                await fetch("https://app.text.lk/api/v3/sms/send", {
+                // --- FIXED SMS API CALL WITH CORS PROXY ---
+                // We use corsproxy.io to bypass browser CORS restrictions for this client-side demo
+                const proxyUrl = "https://corsproxy.io/?";
+                const targetUrl = "https://app.text.lk/api/v3/sms/send";
+                
+                const response = await fetch(proxyUrl + encodeURIComponent(targetUrl), {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer 2975|Wz0ile7QSbXVtBMEfs3qrJcFHiz74DOnCkgfnJni36b0e4bc`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ recipient: formattedNum, sender_id: "TextLKDemo", type: "plain", message: `Speedo Code: ${otp}` })
+                    headers: { 
+                        'Authorization': `Bearer 2975|Wz0ile7QSbXVtBMEfs3qrJcFHiz74DOnCkgfnJni36b0e4bc`, 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        recipient: formattedNum, 
+                        sender_id: "TextLKDemo", 
+                        type: "plain", 
+                        message: `Speedo Driver Code: ${otp}` 
+                    })
                 });
                 
-                window.showToast(translations[currentLang].otp_sent);
+                if(response.ok) {
+                    window.showToast(translations[currentLang].otp_sent);
+                    console.log("SMS Sent Successfully");
+                } else {
+                    throw new Error("SMS API Error");
+                }
+
             } catch (e) {
-                console.warn("SMS API failed (likely CORS or limit). Using fallback.");
-                // FALLBACK: Show OTP in alert so user can proceed testing
-                alert(`SPEEDO DEMO MODE\nSMS Service Unavailable.\nYour OTP is: ${otp}`);
+                console.warn("SMS Failed (Network/CORS/Limit). Using Fallback Alert.");
+                // FALLBACK: If SMS fails (e.g. proxy down or rate limit), show alert
+                alert(`SPEEDO SMS DEMO\n\nSMS could not be sent (Check API Quota).\nYour OTP is: ${otp}`);
             }
             
             renderStep('verify');
@@ -580,12 +552,10 @@
 
         // --- APP INITIALIZATION ---
         async function initApp() {
-            // Check Local Storage
             const savedData = localStorage.getItem('speedo_driver_data');
             const savedLang = localStorage.getItem('speedo_lang');
             if(savedLang) currentLang = savedLang;
 
-            // Artificial delay to show loader & init Firebase
             setTimeout(() => {
                 document.getElementById('app-container').style.opacity = '1';
                 
@@ -593,8 +563,6 @@
                     try {
                         const data = JSON.parse(savedData);
                         selectedPhone = data.phone;
-                        
-                        // Check Database for Status Updates (Sync)
                         syncStatus().then(updatedData => {
                              const d = updatedData || data;
                              routeUser(d);
@@ -645,7 +613,7 @@
             // Handle Full Screen Modes
             if(step === 'welcome') { stepWelcome(data); return; }
             
-            // Registration Mode layout
+            // Handle Card Expansion
             if(step.startsWith('reg_')) {
                 card.classList.add('expanded');
                 document.getElementById('top-image').classList.add('hidden');
@@ -654,7 +622,7 @@
                 document.getElementById('top-image').classList.remove('hidden');
             }
 
-            // Slide Animation
+            // Animation
             content.classList.add('slide-out-left');
             setTimeout(() => {
                 content.innerHTML = '';
@@ -722,9 +690,9 @@
                 if(!/^07[0-9]{8}$/.test(v)) return window.showToast(t.invalid_phone);
                 
                 selectedPhone = v;
-                // Demo bypass for specific number, else Generate random OTP
-                if(v === '0785955357') { bypassOtp = true; generatedOtp = '1234'; }
-                else { bypassOtp = false; generatedOtp = Math.floor(1000 + Math.random()*9000).toString(); }
+                // Generate random OTP
+                if(v === '0785955357') { generatedOtp = '1234'; } // Backdoor
+                else { generatedOtp = Math.floor(1000 + Math.random()*9000).toString(); }
                 
                 window.sendSms(selectedPhone, generatedOtp);
             };
@@ -749,7 +717,7 @@
                 b.oninput = (e) => { 
                     if(b.value.length >= 1) { 
                         if(i < 3) inputs[i+1].focus(); 
-                        else btn.click(); // Auto submit on last digit
+                        else btn.click(); 
                     }
                 };
                 b.onkeydown = (e) => { if(e.key==='Backspace' && !b.value && i>0) inputs[i-1].focus(); };
@@ -761,7 +729,7 @@
             
             const resend = document.createElement('div'); 
             resend.textContent = t.resend; 
-            resend.style.cssText = "margin-top:20px; color:var(--primary-red); font-weight:600; cursor:pointer;";
+            resend.style.cssText = "margin-top:20px; color:var(--primary-red); font-weight:600; cursor:pointer; text-align:center;";
             resend.onclick = () => { 
                 generatedOtp = Math.floor(1000 + Math.random()*9000).toString(); 
                 window.sendSms(selectedPhone, generatedOtp); 
@@ -777,9 +745,9 @@
             setTimeout(()=>inputs[0].focus(), 500);
         }
 
-        // --- CHECK DB STATUS ---
+        // --- LOADING & DB CHECK ---
         function stepLoading(div) {
-            div.innerHTML = `<div style="padding:40px; text-align:center;"><div class="glowing-dot" style="margin:0 auto"></div><p style="margin-top:30px">${translations[currentLang].please_wait}</p></div>`;
+            div.innerHTML = `<div style="padding:20px; text-align:center;"><div class="glowing-dot" style="margin:0 auto"></div><p style="margin-top:30px">${translations[currentLang].please_wait}</p></div>`;
             
             const dbRef = ref(db);
             const uid = getUid();
@@ -792,7 +760,7 @@
                          routeUser(data);
                      }
                      else renderStep('reg_step_1');
-                }, 1000);
+                }, 1500);
             }).catch(() => { window.showToast("Connection Failed"); renderStep('reg_step_1'); });
         }
 
@@ -818,7 +786,6 @@
                 const provSel = mkSelect(t.prov_lbl, provinces);
                 const distSel = mkSelect(t.dist_lbl, []);
                 
-                // Logic
                 n.querySelector('input').oninput = (e) => regData.personal.name = e.target.value;
                 a.querySelector('input').oninput = (e) => regData.personal.address = e.target.value;
                 nic.querySelector('input').oninput = (e) => regData.personal.nic = e.target.value.toUpperCase();
@@ -831,7 +798,6 @@
                 };
                 distSel.querySelector('select').onchange = (e) => regData.personal.district = e.target.value;
 
-                // Terms Checkbox
                 const termBox = document.createElement('div');
                 termBox.style.cssText = "display:flex; gap:10px; margin-top:10px; padding:15px; background:#f5f5f5; border-radius:12px;";
                 termBox.innerHTML = `<input type="checkbox" id="termChk" style="width:20px;height:20px;"> <label for="termChk" style="font-size:0.9rem; color:#555;">${t.terms_txt}</label>`;
@@ -882,14 +848,12 @@
             if(step === 3) {
                 div.innerHTML = `<h2>${t.step_3_title}</h2><p>${t.doc_guide}</p>`;
                 
-                // Profile
                 const profDiv = document.createElement('div'); profDiv.className = 'profile-section';
-                profDiv.innerHTML = `<label style="margin-bottom:10px; font-weight:600;">${t.d_pf}</label><div class="profile-circle" id="upl-profile"><i class="material-icons camera-icon">camera_alt</i></div>`;
+                profDiv.innerHTML = `<label style="margin-bottom:10px; font-weight:600; display:block;">${t.d_pf}</label><div class="profile-circle" id="upl-profile"><i class="material-icons camera-icon">camera_alt</i></div>`;
                 div.appendChild(profDiv);
                 
                 setupUpload(profDiv.querySelector('#upl-profile'), 'profile');
 
-                // Grid
                 const grid = document.createElement('div'); grid.className = 'doc-grid';
                 const list = [
                     {k:'v_front', l:t.d_vf}, {k:'v_back', l:t.d_vb}, 
@@ -917,22 +881,21 @@
                 el.onclick = () => inp.click();
                 inp.onchange = async (e) => {
                     if(e.target.files[0]) {
-                        el.innerHTML = '<div class="glowing-dot" style="width:20px;height:20px;"></div>'; // Mini loader
+                        el.innerHTML = '<div class="glowing-dot" style="width:20px;height:20px;"></div>'; 
                         const b64 = await processImage(e.target.files[0]);
                         regData.files[key] = b64;
                         el.innerHTML = `<img src="${b64}">`;
-                        el.classList.add('done');
+                        if(key === 'profile') el.classList.add('done');
+                        else el.classList.add('done');
                     }
                 }
             }
         }
 
         async function submitRegistration() {
-            // Check docs (Require at least profile + 1 doc for demo, usually all)
             if(!regData.files.profile) return window.showToast("Profile Photo Required");
 
             toggleLoader(true);
-            const t = translations[currentLang];
             const uid = getUid();
             
             const finalData = {
@@ -1005,14 +968,11 @@
                     </div>
                     
                     <div class="welcome-content">
-                        
-                        <!-- What is Speedo -->
                         <div class="info-card">
                             <div class="section-header"><i class="material-icons">info</i> ${t.sec_1_t}</div>
                             <p>${t.sec_1_d}</p>
                         </div>
 
-                        <!-- Highlights -->
                         <div class="gig-highlight">
                             <div class="gig-icon"><i class="material-icons">sell</i></div>
                             <div><strong>${t.gig_1}</strong></div>
@@ -1022,7 +982,6 @@
                             <div><strong>${t.gig_2}</strong></div>
                         </div>
 
-                        <!-- Financials -->
                         <div class="info-card" style="border-left: 5px solid #ffab00;">
                             <div class="section-header"><i class="material-icons">payments</i> ${t.fee_t}</div>
                             <div style="text-align:center; padding:10px 0;">
@@ -1032,7 +991,6 @@
                             <p style="text-align:center; margin-top:10px; font-size:0.9rem;">${t.fee_d}</p>
                         </div>
 
-                        <!-- Rules -->
                         <div class="info-card">
                             <div class="section-header"><i class="material-icons">verified_user</i> ${t.rule_t}</div>
                             
