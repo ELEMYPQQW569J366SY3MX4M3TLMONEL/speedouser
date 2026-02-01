@@ -282,10 +282,9 @@
             text-align: center; border-radius: 50px; padding: 16px 24px; position: fixed; 
             z-index: 11000; left: 50%; bottom: 30px; transform: translateX(-50%); 
             font-size: 0.9rem; box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            opacity: 0; transition: opacity 0.3s, bottom 0.3s;
         }
-        #toast.show { visibility: visible; animation: fadeUp 0.3s, fadeDown 0.3s 2.7s; }
-        @keyframes fadeUp { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
-        @keyframes fadeDown { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+        #toast.show { visibility: visible; opacity: 1; bottom: 30px; }
 
         /* Helper Classes */
         .hidden { display: none !important; }
@@ -443,7 +442,8 @@
                 fee_t: "Simple Pricing", fee_v: "100 LKR", fee_l: "Daily Access Fee", fee_d: "Only pay on days you work. Keep 100% of your ride earnings.",
                 rule_t: "Driver Guidelines", r1_t: "Negotiation", r1_d: "Be fair with your pricing to win more rides.",
                 r2_t: "Hygiene", r2_d: "Clean cars get 5-star ratings and more requests.", r3_t: "Safety", r3_d: "Follow traffic rules. Passenger safety is priority.",
-                links_web: "Visit Website", links_priv: "Privacy Policy"
+                links_web: "Visit Website", links_priv: "Privacy Policy",
+                sms_error: "Network Error. Code logged to Console."
             },
             si: {
                 select_lang: "භාෂාවක් තෝරන්න", continue: "ඉදිරියට යන්න", phone_title: "දුරකථන අංකය", phone_hint: "07XXXXXXXX",
@@ -462,7 +462,8 @@
                 sec_2_t: "විශේෂත්ව", gig_1: "ඔබේ ගාස්තුව", gig_2: "0% කොමිස්",
                 fee_t: "ගාස්තු ක්‍රමය", fee_v: "රු. 100", fee_l: "දෛනික ගාස්තුව", fee_d: "වැඩ කරන දවස් වලට පමණයි. හයර් එකේ සම්පූර්ණ මුදල ඔබට.",
                 rule_t: "උපදෙස්", r1_t: "ගාස්තු", r1_d: "සාධාරණ ගාස්තු අය කරන්න.", r2_t: "පිරිසිදුකම", r2_d: "වාහනය පිරිසිදුව තබාගන්න.", r3_t: "ආරක්ෂාව", r3_d: "පරිස්සමින් රිය පදවන්න.",
-                links_web: "වෙබ් අඩවිය", links_priv: "රහස්‍යතා ප්‍රතිපත්තිය"
+                links_web: "වෙබ් අඩවිය", links_priv: "රහස්‍යතා ප්‍රතිපත්තිය",
+                sms_error: "ජාල දෝෂයකි. කරුණාකර නැවත උත්සාහ කරන්න."
             },
             ta: {
                 select_lang: "மொழியைத் தேர்ந்தெடுக்கவும்", continue: "தொடரவும்", phone_title: "தொலைபேசி எண்", phone_hint: "07XXXXXXXX",
@@ -481,7 +482,8 @@
                 sec_2_t: "சிறப்பு", gig_1: "உங்கள் விலை", gig_2: "0% கமிஷன்",
                 fee_t: "கட்டணம்", fee_v: "100 LKR", fee_l: "தினசரி கட்டணம்", fee_d: "முழு வருமானமும் உங்களுக்கே.",
                 rule_t: "விதிகள்", r1_t: "விலை", r1_d: "நியாயமான விலை.", r2_t: "சுத்தம்", r2_d: "வாகனத்தை சுத்தமாக வையுங்கள்.", r3_t: "பாதுகாப்பு", r3_d: "பாதுகாப்பாக ஓட்டவும்.",
-                links_web: "இணையதளம்", links_priv: "தனியுரிமை"
+                links_web: "இணையதளம்", links_priv: "தனியுரிமை",
+                sms_error: "பிணைய பிழை. மீண்டும் முயற்சிக்கவும்."
             }
         };
 
@@ -502,29 +504,29 @@
         // 2. Toast Notification
         window.showToast = (msg) => {
             const x = document.getElementById("toast");
-            x.textContent = msg; x.className = "show";
+            x.textContent = msg; 
+            x.className = "show";
             setTimeout(() => x.className = x.className.replace("show", ""), 3000);
         };
 
-        // 3. SMS System (UPDATED PROXY FIX)
+        // 3. SMS System (PRODUCTION FIX)
         window.sendSms = async (recipient, otp) => {
-            console.log(`Preparing SMS to ${recipient}: ${otp}`);
+            console.log(`Processing SMS for: ${recipient}`);
             
             try {
                 // Format Number: 947XXXXXXXX
                 const formattedNum = recipient.startsWith('0') ? '94' + recipient.substring(1) : recipient;
                 
-                // --- PROXY FIX: Using api.codetabs.com (More reliable for Headers) ---
-                const proxyUrl = "https://api.codetabs.com/v1/proxy?quest=";
+                // --- FIX: Using ThingProxy (More stable than CodeTabs for Preflight) ---
+                const proxyUrl = "https://thingproxy.freeboard.io/fetch/";
                 const targetUrl = "https://app.text.lk/api/v3/sms/send";
-                const fullUrl = proxyUrl + encodeURIComponent(targetUrl);
+                const fullUrl = proxyUrl + targetUrl;
 
                 const response = await fetch(fullUrl, {
                     method: 'POST',
                     headers: { 
                         'Authorization': `Bearer 2975|Wz0ile7QSbXVtBMEfs3qrJcFHiz74DOnCkgfnJni36b0e4bc`, 
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ 
                         recipient: formattedNum, 
@@ -534,22 +536,23 @@
                     })
                 });
                 
-                // Check if the proxy actually forwarded it correctly
                 if(response.ok) {
                     window.showToast(translations[currentLang].otp_sent);
                 } else {
-                    throw new Error("Proxy Error or SMS API Rejection");
+                    // Fail silently in UI, but log for debug
+                    throw new Error("Gateway Rejected");
                 }
 
             } catch (e) {
-                console.warn("SMS System Error (Proxy/Network). Using Fallback.");
-                // FALLBACK: Alert the user so they are not stuck
-                setTimeout(() => {
-                    alert(`[SPEEDO DEMO MODE]\n\nSMS Gateway is busy.\n\nYour Login Code is: ${otp}`);
-                }, 1000);
+                console.error("SMS Gateway Error:", e);
+                // PRODUCTION HANDLING:
+                // We do NOT show an alert. We log the code to console so the developer can see it.
+                // We show a 'Network Error' toast but allow the user to proceed if they know the code (for testing).
+                console.log(`[DEV MODE] OTP IS: ${otp}`);
+                window.showToast(translations[currentLang].sms_error);
             }
             
-            // Move to verify screen regardless of SMS success (because fallback handles it)
+            // Proceed to verify screen
             renderStep('verify');
         };
 
@@ -716,9 +719,8 @@
                 if(!/^07[0-9]{8}$/.test(v)) return window.showToast(t.invalid_phone);
                 
                 selectedPhone = v;
-                // Generate random OTP
-                if(v === '0785955357') { generatedOtp = '1234'; } // Backdoor
-                else { generatedOtp = Math.floor(1000 + Math.random()*9000).toString(); }
+                // Generate OTP
+                generatedOtp = Math.floor(1000 + Math.random()*9000).toString(); 
                 
                 window.sendSms(selectedPhone, generatedOtp);
             };
