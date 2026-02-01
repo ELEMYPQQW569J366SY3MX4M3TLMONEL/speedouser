@@ -41,10 +41,11 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: var(--white);
+            background: rgba(255, 255, 255, 0.95); /* Slightly transparent white */
             display: flex;
             justify-content: center;
             align-items: center;
+            flex-direction: column;
             z-index: 9999;
             transition: opacity 0.5s ease;
         }
@@ -56,6 +57,13 @@
             border-radius: 50%;
             box-shadow: 0 0 10px var(--primary-red), 0 0 20px var(--primary-red);
             animation: pulse 1.5s infinite;
+        }
+
+        .loader-text {
+            margin-top: 20px;
+            font-size: 1rem;
+            color: #555;
+            font-weight: 500;
         }
 
         @keyframes pulse {
@@ -203,15 +211,6 @@
         }
         .btn-continue:active { transform: scale(0.97); }
 
-        .btn-outline {
-            background-color: transparent;
-            color: var(--primary-red);
-            border: 1px solid var(--primary-red);
-            margin-top: 15px;
-            box-shadow: none;
-        }
-
-        /* INPUT GROUPS */
         .input-group { 
             width: 100%; 
             margin-bottom: 20px;
@@ -246,7 +245,7 @@
         /* Terms Box */
         .terms-container {
             display: flex;
-            align-items: flex-start; /* Align top for multi-line text */
+            align-items: flex-start;
             gap: 12px;
             margin-top: 15px;
             width: 100%;
@@ -257,34 +256,13 @@
         }
         
         .terms-checkbox {
-            min-width: 20px;
-            width: 20px;
-            height: 20px;
-            margin-top: 2px;
-            accent-color: var(--primary-red);
-            cursor: pointer;
+            min-width: 20px; width: 20px; height: 20px;
+            margin-top: 2px; accent-color: var(--primary-red); cursor: pointer;
         }
 
-        .terms-content {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .terms-text { 
-            font-size: 0.85rem; 
-            color: #555; 
-            line-height: 1.4; 
-            margin: 0;
-        }
-        
-        .website-link {
-            font-size: 0.85rem;
-            color: #007bff;
-            text-decoration: none;
-            margin-top: 5px;
-            font-weight: 500;
-            display: inline-block;
-        }
+        .terms-content { display: flex; flex-direction: column; }
+        .terms-text { font-size: 0.85rem; color: #555; line-height: 1.4; margin: 0; }
+        .website-link { font-size: 0.85rem; color: #007bff; text-decoration: none; margin-top: 5px; font-weight: 500; display: inline-block; }
 
         /* Documents Grid */
         .doc-grid {
@@ -309,17 +287,12 @@
         .doc-card-overlay { z-index: 2; background: rgba(255,255,255,0.8); padding: 2px 5px; border-radius: 4px; }
 
         /* Profile Photo */
-        .profile-section {
-            width: 100%; display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;
-        }
+        .profile-section { width: 100%; display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
         .profile-circle {
             width: 140px; height: 180px; 
-            border-radius: 50%;
-            background: #f0f0f0;
-            border: 3px dashed #ccc;
+            border-radius: 50%; background: #f0f0f0; border: 3px dashed #ccc;
             display: flex; align-items: center; justify-content: center;
-            overflow: hidden; position: relative;
-            cursor: pointer;
+            overflow: hidden; position: relative; cursor: pointer;
         }
         .profile-circle.uploaded { border-color: var(--success-green); border-style: solid; }
         .profile-circle img { width: 100%; height: 100%; object-fit: cover; }
@@ -333,18 +306,12 @@
         .status-icon.error { color: var(--error-red); }
 
         .reason-box {
-            background: #fff5f5;
-            border: 1px solid #feb2b2;
-            color: #c53030;
-            padding: 15px;
-            border-radius: var(--radius);
-            margin: 20px 0;
-            font-size: 0.9rem;
-            width: 100%;
-            text-align: left;
+            background: #fff5f5; border: 1px solid #feb2b2; color: #c53030;
+            padding: 15px; border-radius: var(--radius); margin: 20px 0;
+            font-size: 0.9rem; width: 100%; text-align: left;
         }
 
-        /* Toast & OTP Styles */
+        /* Toast & OTP */
         .otp-container { display: flex; justify-content: space-between; width: 100%; max-width: 320px; margin: 20px 0; gap: 15px; }
         .otp-box { width: 55px; height: 55px; text-align: center; font-size: 1.5rem; border: 1px solid #ccc; border-radius: var(--radius); background: #fafafa; }
         .otp-box:focus { border-color: var(--primary-red); }
@@ -355,18 +322,17 @@
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
 
         .loading-wrapper {
-            width: 100%;
-            height: 300px; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 100%; height: 300px; 
+            display: flex; align-items: center; justify-content: center;
         }
     </style>
 </head>
 <body>
 
+    <!-- Full Screen Loader -->
     <div id="loader-container">
         <div class="glowing-dot"></div>
+        <div class="loader-text" id="loader-msg">Loading...</div>
     </div>
 
     <!-- Sticky Progress Bar -->
@@ -390,7 +356,6 @@
         </div>
     </div>
 
-    <!-- Hidden Canvas for Compression -->
     <canvas id="compress-canvas" style="display:none;"></canvas>
 
     <script type="module">
@@ -417,7 +382,6 @@
         let bypassOtp = false;
 
         let regData = { personal: {}, vehicle: {}, files: {} };
-
         const getUid = () => `SPEEDO_D_${selectedPhone}`;
 
         // --- DATA SETS ---
@@ -451,7 +415,7 @@
                 invalid_phone: "Invalid phone number", terms: "I agree to the Terms & Conditions and Privacy Policy.",
                 visit_site: "For more info visit Speedo website",
                 otp_sent: "OTP Sent!", verify_title: "Verify Phone", verify_btn: "Verify", wrong_otp: "Incorrect OTP",
-                please_wait: "Please Wait...", resend_code: "Resend Code", enter_code_guide: "Enter the 4-digit code",
+                please_wait: "Checking Status...", resend_code: "Resend Code", enter_code_guide: "Enter the 4-digit code",
                 reg_title_1: "Personal Details", name_lbl: "Full Name", addr_lbl: "Address", 
                 prov_lbl: "Province", dist_lbl: "District", nic_lbl: "NIC Number", email_lbl: "Email (Optional)",
                 nic_hint: "Old (9+V/X) or New (12 digits)", 
@@ -468,7 +432,8 @@
                 approval_failed: "Approval Failed",
                 try_again: "Try Again",
                 reason_lbl: "Reasons for decline:",
-                delete_error: "Could not reset. Contact support."
+                delete_error: "Could not reset. Contact support.",
+                registering: "Registering Profile..."
             },
             si: {
                 select_lang: "භාෂාවක් තෝරන්න", continue: "ඉදිරියට යන්න", phone_title: "දුරකථන අංකය ඇතුළත් කරන්න", phone_hint: "උදා: 071XXXXXXX",
@@ -492,7 +457,8 @@
                 approval_failed: "අනුමැතිය අසාර්ථක විය",
                 try_again: "නැවත උත්සාහ කරන්න",
                 reason_lbl: "හේතු:",
-                delete_error: "දෝෂයකි. සහාය අමතන්න."
+                delete_error: "දෝෂයකි. සහාය අමතන්න.",
+                registering: "ලියාපදිංචි වෙමින් පවතී..."
             },
             ta: {
                 select_lang: "மொழியைத் தேர்ந்தெடுக்கவும்", continue: "தொடரவும்", phone_title: "தொலைபேசி எண்", phone_hint: "எ.கா. 071XXXXXXX",
@@ -516,10 +482,12 @@
                 approval_failed: "ஒப்புதல் தோல்வியடைந்தது",
                 try_again: "மீண்டும் முயற்சிக்கவும்",
                 reason_lbl: "காரணங்கள்:",
-                delete_error: "பிழை. ஆதரவைத் தொடர்பு கொள்ளவும்."
+                delete_error: "பிழை. ஆதரவைத் தொடர்பு கொள்ளவும்.",
+                registering: "பதிவு செய்யப்படுகிறது..."
             }
         };
 
+        // --- UTILS ---
         window.showToast = (message) => {
             const x = document.getElementById("toast");
             x.textContent = message;
@@ -533,8 +501,21 @@
             renderStep('verify');
         };
 
+        const toggleLoader = (show, msg = "") => {
+            const el = document.getElementById('loader-container');
+            const txt = document.getElementById('loader-msg');
+            if(show) {
+                txt.textContent = msg;
+                el.style.display = 'flex';
+                setTimeout(() => el.style.opacity = '1', 10);
+            } else {
+                el.style.opacity = '0';
+                setTimeout(() => el.style.display = 'none', 500);
+            }
+        };
+
         const processImage = (file) => {
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     const img = new Image();
@@ -553,8 +534,7 @@
                         canvas.width = width;
                         canvas.height = height;
                         ctx.drawImage(img, 0, 0, width, height);
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                        resolve(dataUrl);
+                        resolve(canvas.toDataURL('image/jpeg', 0.7));
                     };
                     img.src = event.target.result;
                 };
@@ -564,40 +544,38 @@
 
         async function initApp() {
             const imgEl = document.getElementById('main-bg');
-            const bgUrl = "https://i.ibb.co/spSLzC3f/hblj.jpg";
-            imgEl.src = bgUrl;
+            imgEl.src = "https://i.ibb.co/spSLzC3f/hblj.jpg";
             
             setTimeout(() => {
-                document.getElementById('loader-container').style.opacity = '0';
+                toggleLoader(false);
                 document.getElementById('app-container').style.opacity = '1';
-                setTimeout(() => {
-                    document.getElementById('loader-container').style.display = 'none';
-                    const lang = localStorage.getItem('speedo_lang');
-                    if(lang) { currentLang = lang; renderStep('phone'); }
-                    else renderStep('language');
-                }, 500);
+                const lang = localStorage.getItem('speedo_lang');
+                if(lang) { currentLang = lang; renderStep('phone'); }
+                else renderStep('language');
             }, 1500);
         }
         initApp();
 
+        // --- NAVIGATION ---
         function renderStep(step, data = null) {
             const content = document.getElementById('card-content');
             
+            // Clean up old step elements immediately
             content.classList.add('slide-out-left');
 
             setTimeout(() => {
                 content.innerHTML = '';
                 content.classList.remove('slide-out-left');
 
+                // Render New Step
                 switch(step) {
                     case 'language': stepLanguage(content); break;
                     case 'phone': stepPhone(content); break;
                     case 'verify': stepVerify(content); break;
-                    case 'loading': stepLoading(content); break;
+                    case 'loading': stepLoading(content); break; // Checks DB
                     case 'pending': stepPending(content); break;
                     case 'welcome': stepWelcome(content, data); break;
                     case 'declined': stepDeclined(content, data); break;
-                    case 'dashboard': stepDashboard(content); break;
                     case 'reg_step_1': startRegistration(content, 1); break;
                     case 'reg_step_2': startRegistration(content, 2); break;
                     case 'reg_step_3': startRegistration(content, 3); break;
@@ -645,7 +623,6 @@
             const btn = document.createElement('button');
             btn.className = 'btn-continue'; btn.textContent = t.continue;
             
-
             btn.onclick = () => {
                 const v = inp.value.trim();
                 if(!/^07[0-9]{8}$/.test(v)) return window.showToast(t.invalid_phone);
@@ -683,6 +660,7 @@
         }
 
         function stepLoading(div) {
+            // ONLY THE GLOWING DOT, CENTERED
             div.innerHTML = `<div class="loading-wrapper"><div class="glowing-dot"></div></div>`;
             const dbRef = ref(db);
             const uid = getUid();
@@ -691,16 +669,12 @@
                 setTimeout(() => {
                      if(snap.exists()) {
                          const data = snap.val();
-                         if(data.approval_status === 'approved') {
-                             localStorage.setItem('speedo_driver_data', JSON.stringify(data));
-                             renderStep('welcome', data);
-                         } 
-                         else if (data.approval_status === 'declined') {
-                             renderStep('declined', data);
-                         }
-                         else {
-                             renderStep('pending');
-                         }
+                         // Sync LocalStorage with latest DB status
+                         localStorage.setItem('speedo_driver_data', JSON.stringify(data));
+                         
+                         if(data.approval_status === 'approved') renderStep('welcome', data);
+                         else if (data.approval_status === 'declined') renderStep('declined', data);
+                         else renderStep('pending');
                      }
                      else renderStep('reg_step_1');
                 }, 1000);
@@ -734,8 +708,7 @@
 
         function stepDeclined(div, data) {
             const t = translations[currentLang];
-            const reasons = data.reasons || "Document verification failed.";
-            
+            const reasons = data.reasons || "Verification failed.";
             div.innerHTML = `
                 <div class="status-container">
                     <i class="material-icons status-icon error">error_outline</i>
@@ -747,30 +720,18 @@
                     <button class="btn-continue" id="btn-try-again">${t.try_again}</button>
                 </div>
             `;
-
             document.getElementById('btn-try-again').onclick = () => {
-                if(confirm("This will clear your current application. Continue?")) {
+                if(confirm("This will clear your application. Continue?")) {
                     const uid = getUid();
-                    remove(ref(db, `drivers/${uid}`))
-                        .then(() => {
-                            regData = { personal: {}, vehicle: {}, files: {} }; // Reset local state
+                    remove(ref(db, `drivers/${uid}`)).then(() => {
+                            regData = { personal: {}, vehicle: {}, files: {} };
                             renderStep('reg_step_1');
-                        })
-                        .catch((e) => {
-                            console.error(e);
-                            window.showToast(t.delete_error);
-                        });
+                    }).catch((e) => window.showToast(t.delete_error));
                 }
             };
         }
 
-        function stepDashboard(div) {
-            // Placeholder for already logged in but not handled by welcome logic
-             const t = translations[currentLang];
-             div.innerHTML = `<div class="status-container"><i class="material-icons status-icon success">check_circle</i><h2>${t.welcome_title}</h2></div>`;
-        }
-
-        // --- FULL SCREEN REGISTRATION LOGIC ---
+        // --- REGISTRATION LOGIC ---
         
         function updateProgressBar(step) {
             const bar = document.getElementById('reg-progress-bar');
@@ -780,33 +741,24 @@
         }
 
         function startRegistration(div, step) {
-            // Expand Interface
             document.getElementById('main-card').classList.add('expanded');
             document.getElementById('top-image').classList.add('hidden');
-            
             updateProgressBar(step);
             const t = translations[currentLang];
 
             if(step === 1) {
                 div.innerHTML = `<h2>${t.reg_title_1}</h2>`;
                 
-                // Name
                 const nameGroup = mkInput(t.name_lbl, 'text', regData.personal.name || '');
-                const nameInp = nameGroup.querySelector('input');
-                nameInp.oninput = (e) => { e.target.classList.toggle('valid', e.target.value.length > 3); regData.personal.name = e.target.value; };
+                nameGroup.querySelector('input').oninput = (e) => { e.target.classList.toggle('valid', e.target.value.length > 3); regData.personal.name = e.target.value; };
                 
-                // Phone (Readonly)
                 const phoneGroup = mkInput(t.phone_title, 'text', selectedPhone, true);
                 
-                // Address
                 const addrGroup = mkInput(t.addr_lbl, 'text', regData.personal.address || '');
-                const addrInp = addrGroup.querySelector('input');
-                addrInp.oninput = (e) => { e.target.classList.toggle('valid', e.target.value.length > 5); regData.personal.address = e.target.value; };
+                addrGroup.querySelector('input').oninput = (e) => { e.target.classList.toggle('valid', e.target.value.length > 5); regData.personal.address = e.target.value; };
                 
-                // Province & District
                 const distGroup = mkSelect(t.dist_lbl, []);
                 const distSel = distGroup.querySelector('select');
-
                 const provGroup = mkSelect(t.prov_lbl, provinces);
                 const provSel = provGroup.querySelector('select');
                 
@@ -820,46 +772,27 @@
                         distSel.appendChild(opt);
                     });
                 };
-
                 distSel.onchange = (e) => { regData.personal.district = e.target.value; distSel.classList.add('valid'); };
 
-                // NIC
                 const nicGroup = mkInput(t.nic_lbl, 'text', regData.personal.nic || '');
                 const nicInp = nicGroup.querySelector('input');
                 nicInp.placeholder = t.nic_hint;
                 nicInp.oninput = (e) => {
                     const v = e.target.value.toUpperCase();
-                    const isValid = /^([0-9]{9}[VX]|[0-9]{12})$/.test(v);
-                    e.target.classList.toggle('valid', isValid);
+                    e.target.classList.toggle('valid', /^([0-9]{9}[VX]|[0-9]{12})$/.test(v));
                     regData.personal.nic = v;
                 };
 
-                // Email
                 const emailGroup = mkInput(t.email_lbl, 'email', regData.personal.email || '');
-                const emailInp = emailGroup.querySelector('input');
-                emailInp.oninput = (e) => regData.personal.email = e.target.value;
+                emailGroup.querySelector('input').oninput = (e) => regData.personal.email = e.target.value;
 
-                // Terms - UPDATED
+                // Terms
                 const termsDiv = document.createElement('div');
                 termsDiv.className = 'terms-container';
-                
-                const chk = document.createElement('input'); 
-                chk.type = 'checkbox'; 
-                chk.className = 'terms-checkbox';
-                
-                const termsContent = document.createElement('div');
-                termsContent.className = 'terms-content';
-                
-                const p = document.createElement('p'); 
-                p.className='terms-text'; 
-                p.textContent = t.terms;
-                
-                const link = document.createElement('a');
-                link.href = "https://speedo.lk"; // Placeholder URL
-                link.target = "_blank";
-                link.className = "website-link";
-                link.textContent = t.visit_site;
-
+                const chk = document.createElement('input'); chk.type = 'checkbox'; chk.className = 'terms-checkbox';
+                const termsContent = document.createElement('div'); termsContent.className = 'terms-content';
+                const p = document.createElement('p'); p.className='terms-text'; p.textContent = t.terms;
+                const link = document.createElement('a'); link.href = "https://speedo.lk"; link.target = "_blank"; link.className = "website-link"; link.textContent = t.visit_site;
                 termsContent.append(p, link);
                 termsDiv.append(chk, termsContent);
 
@@ -872,7 +805,6 @@
                     }
                     renderStep('reg_step_2');
                 };
-
                 div.append(nameGroup, phoneGroup, addrGroup, provGroup, distGroup, nicGroup, emailGroup, termsDiv, nextBtn);
             }
 
@@ -885,32 +817,23 @@
 
                 const modelGroup = mkSelect(t.model_lbl, []);
                 const modelSel = modelGroup.querySelector('select');
-
                 const brandGroup = mkSelect(t.brand_lbl, brands);
                 const brandSel = brandGroup.querySelector('select');
 
                 brandSel.onchange = (e) => {
-                    const b = e.target.value;
-                    regData.vehicle.brand = b;
-                    brandSel.classList.add('valid');
+                    const b = e.target.value; regData.vehicle.brand = b; brandSel.classList.add('valid');
                     modelSel.innerHTML = '<option value="" disabled selected>Select</option>';
-                    const mList = models[b] || models['Default'];
-                    mList.forEach(m => {
-                        const opt = document.createElement('option'); opt.value = m; opt.textContent = m;
-                        modelSel.appendChild(opt);
+                    (models[b] || models['Default']).forEach(m => {
+                        const opt = document.createElement('option'); opt.value = m; opt.textContent = m; modelSel.appendChild(opt);
                     });
                 };
                 modelSel.onchange = (e) => { regData.vehicle.model = e.target.value; modelSel.classList.add('valid'); };
 
                 const plateGroup = mkInput(t.plate_lbl, 'text', regData.vehicle.plate || '');
-                const plateInp = plateGroup.querySelector('input');
-                plateInp.oninput = (e) => {
-                    const v = e.target.value.toUpperCase();
-                    e.target.classList.toggle('valid', v.length >= 6);
-                    regData.vehicle.plate = v;
+                plateGroup.querySelector('input').oninput = (e) => {
+                    const v = e.target.value.toUpperCase(); e.target.classList.toggle('valid', v.length >= 6); regData.vehicle.plate = v;
                 };
 
-                // Years
                 const years = []; for(let y=1990; y<=2027; y++) years.push(y);
                 const yearGroup = mkSelect(t.year_lbl, years);
                 const yearSel = yearGroup.querySelector('select');
@@ -919,12 +842,9 @@
                 const nextBtn = document.createElement('button');
                 nextBtn.className = 'btn-continue'; nextBtn.textContent = "Next";
                 nextBtn.onclick = () => {
-                    if(!regData.vehicle.type || !regData.vehicle.brand || !regData.vehicle.plate) {
-                        window.showToast("Please complete vehicle details."); return;
-                    }
+                    if(!regData.vehicle.type || !regData.vehicle.brand || !regData.vehicle.plate) { window.showToast("Please complete vehicle details."); return; }
                     renderStep('reg_step_3');
                 };
-
                 div.append(typeGroup, brandGroup, modelGroup, plateGroup, yearGroup, nextBtn);
             }
 
@@ -932,11 +852,8 @@
                 div.innerHTML = `<h2>${t.reg_title_3}</h2><p style="text-align:center;font-size:0.8rem;color:#666;margin-bottom:15px">${t.upload_guide}</p>`;
 
                 const profSec = document.createElement('div'); profSec.className = 'profile-section';
-                const profLbl = document.createElement('label'); profLbl.textContent = t.profile_lbl;
                 const oval = document.createElement('div'); oval.className = 'profile-circle';
-                const icon = document.createElement('i'); icon.className = 'material-icons camera-icon'; icon.textContent = 'camera_alt';
-                oval.appendChild(icon);
-                
+                oval.innerHTML = `<i class="material-icons camera-icon">camera_alt</i>`;
                 const pInput = document.createElement('input'); pInput.type='file'; pInput.accept='image/*'; pInput.hidden=true;
                 oval.onclick = () => pInput.click();
                 pInput.onchange = async (e) => {
@@ -947,7 +864,7 @@
                         oval.innerHTML = `<img src="${b64}">`;
                     }
                 };
-                profSec.append(profLbl, oval);
+                profSec.append(document.createElement('label'), oval);
                 div.appendChild(profSec);
 
                 const grid = document.createElement('div'); grid.className = 'doc-grid';
@@ -960,7 +877,6 @@
                 docs.forEach(d => {
                     const card = document.createElement('div'); card.className = 'doc-card';
                     card.innerHTML = `<i class="material-icons">cloud_upload</i><span>${d.l}</span>`;
-                    
                     const inp = document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.hidden=true;
                     card.onclick = () => inp.click();
                     inp.onchange = async (e) => {
@@ -982,9 +898,9 @@
                         window.showToast("Please upload all documents.");
                     }
                     
-                    regBtn.textContent = t.processing;
-                    regBtn.disabled = true;
-
+                    // SHOW FULL SCREEN LOADER
+                    toggleLoader(true, t.registering);
+                    
                     const uid = getUid();
                     const finalData = {
                         phone: selectedPhone,
@@ -998,14 +914,18 @@
 
                     set(ref(db, `drivers/${uid}`), finalData)
                         .then(() => {
+                            // SAVE TO LOCALSTORAGE IMMEDIATELY
+                            localStorage.setItem('speedo_driver_data', JSON.stringify(finalData));
+                            
+                            // Hide Loader and show pending
+                            toggleLoader(false);
                             window.showToast("Registration Successful");
                             renderStep('pending');
                         })
                         .catch((e) => {
                             console.error(e);
+                            toggleLoader(false);
                             window.showToast("Error saving data");
-                            regBtn.textContent = t.register_btn;
-                            regBtn.disabled = false;
                         });
                 };
                 div.appendChild(regBtn);
@@ -1027,12 +947,8 @@
             const s = document.createElement('select');
             const def = document.createElement('option'); def.textContent = "Select"; def.value=""; def.disabled=true; def.selected=true;
             s.appendChild(def);
-            options.forEach(o => {
-                const opt = document.createElement('option'); opt.value = o; opt.textContent = o;
-                s.appendChild(opt);
-            });
-            g.appendChild(l); 
-            g.appendChild(s); 
+            options.forEach(o => { const opt = document.createElement('option'); opt.value = o; opt.textContent = o; s.appendChild(opt); });
+            g.appendChild(l); g.appendChild(s); 
             return g;
         }
 
